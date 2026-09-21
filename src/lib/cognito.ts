@@ -79,7 +79,7 @@ async function toSession(result: TokenResult, refreshToken?: string): Promise<Au
     expiresAt: Date.now() + tokens.ExpiresIn * 1000,
   };
 }
-const refreshKey = 'classlens.cognito.refresh';
+const refreshKey = 'chalkwise.cognito.refresh';
 // Web deliberately keeps refresh tokens in memory. A page reload requires sign-in.
 let webRefresh: string | null = null;
 const sessions = createSessionManager({

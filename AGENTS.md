@@ -1,12 +1,12 @@
-# ClassLens project instructions
+# Chalkwise project instructions
 
-ClassLens is developed on the `integration` branch. Check the current branch and
+Chalkwise is developed on the `integration` branch. Check the current branch and
 working tree before editing; do not switch branches around uncommitted work.
 
 Before starting a task:
 
 1. Read `SHARED_CONTRACTS.md` for current operational contracts.
-2. Read `docs/CLASSLENS_IMPLEMENTATION_PLAN.md`, the authoritative product and
+2. Read `docs/CHALKWISE_IMPLEMENTATION_PLAN.md`, the authoritative product and
    milestone plan. Implement only the requested scope; plan items do not authorize
    starting later milestones.
 3. Read `FRONTEND_RULES.md` and/or `BACKEND_RULES.md` for the files involved.

@@ -220,7 +220,7 @@ export function AddCourseSheet({
                 themeColor="textSecondary"
                 style={styles.eyebrow}
               >
-                CLASSLENS COURSES
+                CHALKWISE COURSES
               </ThemedText>
 
               <ThemedText style={[styles.title, { color: theme.text }]}>
@@ -232,7 +232,7 @@ export function AddCourseSheet({
                 style={styles.description}
               >
                 Everything you capture for this class will live here.
-                Start typing and ClassLens will suggest matching courses.
+                Start typing and Chalkwise will suggest matching courses.
               </ThemedText>
 
               <View style={styles.field}>

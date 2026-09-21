@@ -1,4 +1,4 @@
-/** ClassLens paper-and-ink palette with native and web system font fallbacks. */
+/** Chalkwise paper-and-ink palette with native and web system font fallbacks. */
 
 import { Platform } from 'react-native';
 

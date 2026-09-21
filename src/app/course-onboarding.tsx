@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AddCourseSheet } from '@/components/AddCourseSheet';
-import { ClassLensLogo } from '@/components/ClassLensLogo';
+import { ChalkwiseLogo } from '@/components/ChalkwiseLogo';
 import { ThemedText } from '@/components/themed-text';
 import { EmptyState } from '@/components/ui/Editorial';
 import { Screen } from '@/components/ui/Screen';
@@ -64,14 +64,14 @@ export default function CourseOnboardingScreen() {
     <>
       <Screen avoidKeyboard>
         <View style={styles.header}>
-          <ClassLensLogo compact />
+          <ChalkwiseLogo compact />
           <ThemedText type="smallBold" themeColor="textSecondary">COURSES</ThemedText>
         </View>
 
         <View style={styles.intro}>
           <ThemedText type="title" style={styles.title}>Choose your courses.</ThemedText>
           <ThemedText themeColor="textSecondary">
-            Pick at least one course. ClassLens will use these choices for your notebooks and photo matching.
+            Pick at least one course. Chalkwise will use these choices for your notebooks and photo matching.
           </ThemedText>
         </View>
 
@@ -109,7 +109,7 @@ export default function CourseOnboardingScreen() {
             })}
           </View>
         ) : (
-          <EmptyState title="No courses yet" description="Create your course to start your ClassLens workspace." />
+          <EmptyState title="No courses yet" description="Create your course to start your Chalkwise workspace." />
         )}
 
         <Pressable
@@ -126,13 +126,13 @@ export default function CourseOnboardingScreen() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Enter ClassLens"
+          accessibilityLabel="Enter Chalkwise"
           accessibilityState={{ disabled: !selected.size || saving, busy: saving }}
           disabled={!selected.size || saving}
           onPress={submit}
           style={({ pressed }) => [styles.primary, { backgroundColor: dark ? Brand.lime : Brand.forest }, (pressed || !selected.size || saving) && styles.dim]}
         >
-          {saving ? <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} /> : <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>Enter ClassLens  →</ThemedText>}
+          {saving ? <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} /> : <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>Enter Chalkwise  →</ThemedText>}
         </Pressable>
       </Screen>
 

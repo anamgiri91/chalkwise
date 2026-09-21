@@ -33,7 +33,7 @@ function photoFromCamera(picture: CameraCapturedPicture, sequence: number): Capt
     width: picture.width,
     height: picture.height,
     mimeType: format === 'png' ? 'image/png' : 'image/jpeg',
-    fileName: `classlens-${sequence}.${format}`,
+    fileName: `chalkwise-${sequence}.${format}`,
     capturedAt,
     quality: {
       status: 'checking',
@@ -142,7 +142,7 @@ export default function CaptureScreen() {
     } catch (caught) {
       pending.current = Math.max(0, pending.current - 1);
       setPendingCount(pending.current);
-      setCameraError(caught instanceof Error ? caught.message : 'ClassLens could not take that photo. Try again.');
+      setCameraError(caught instanceof Error ? caught.message : 'Chalkwise could not take that photo. Try again.');
     } finally {
       setTaking(false);
     }
@@ -217,7 +217,7 @@ export default function CaptureScreen() {
     return (
       <PermissionState
         title="Camera access is off."
-        body="ClassLens needs camera access to capture slides, notes, and whiteboards."
+        body="Chalkwise needs camera access to capture slides, notes, and whiteboards."
         action={permission.canAskAgain ? 'Try camera permission again' : 'Open Settings'}
         onPress={permission.canAskAgain ? requestPermission : Linking.openSettings}
       />
@@ -381,7 +381,7 @@ export default function CaptureScreen() {
 function PermissionState({
   loading = false,
   title = 'Opening the camera…',
-  body = 'ClassLens is checking camera access.',
+  body = 'Chalkwise is checking camera access.',
   action,
   onPress,
 }: {

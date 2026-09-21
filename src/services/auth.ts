@@ -12,7 +12,7 @@ export const supportsEmailCode = () => getDataMode() === 'api';
 import type { Profile, ProfileInput } from '@/types';
 
 const profileColumns = 'id, name, year, major';
-const demoIdKey = 'classlens.demo-profile-id';
+const demoIdKey = 'chalkwise.demo-profile-id';
 let demoProfile: Profile = {
   id: 'demo-student',
   name: 'Alex Morgan',

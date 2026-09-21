@@ -7,13 +7,13 @@ const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?
 
 if (!supabaseUrl) {
   throw new Error(
-    'ClassLens: EXPO_PUBLIC_SUPABASE_URL is missing or empty. Set it in .env.local and reload Expo.',
+    'Chalkwise: EXPO_PUBLIC_SUPABASE_URL is missing or empty. Set it in .env.local and reload Expo.',
   );
 }
 
 if (!supabasePublishableKey) {
   throw new Error(
-    'ClassLens: EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing or empty. Set it in .env.local and reload Expo.',
+    'Chalkwise: EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing or empty. Set it in .env.local and reload Expo.',
   );
 }
 

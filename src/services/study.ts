@@ -32,7 +32,7 @@ export async function recordReview(
       body: { confidence },
     });
   if (getDataMode() !== 'mock')
-    throw new Error('Review scheduling is available on the new ClassLens backend.');
+    throw new Error('Review scheduling is available on the new Chalkwise backend.');
   if (!(await getLecture(lectureId))) throw new Error('Notebook not found.');
   const now = new Date();
   const review = {
@@ -54,7 +54,7 @@ export async function setLectureSharing(
   shared: boolean,
 ): Promise<LectureSharing> {
   if (getDataMode() !== 'api')
-    throw new Error('Explicit notebook sharing requires the new ClassLens backend.');
+    throw new Error('Explicit notebook sharing requires the new Chalkwise backend.');
   return apiRequest(`/lectures/${encodeURIComponent(lectureId)}/sharing`, {
     method: 'PUT',
     body: { shared },

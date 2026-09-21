@@ -12,7 +12,7 @@ type Props = {
   showWordmark?: boolean;
 };
 
-export function ClassLensLogo({
+export function ChalkwiseLogo({
   size,
   compact = false,
   showWordmark = true,
@@ -22,7 +22,7 @@ export function ClassLensLogo({
   return (
     <View
       accessibilityRole="image"
-      accessibilityLabel="ClassLens"
+      accessibilityLabel="Chalkwise"
     >
       <Svg
         width={resolvedSize}

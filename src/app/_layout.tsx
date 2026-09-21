@@ -151,7 +151,7 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: 'ClassLens',
+            title: 'Chalkwise',
             headerShown: false,
           }}
         />
@@ -250,7 +250,7 @@ export default function RootLayout() {
               />
             </>
           ) : (
-            <ActivityIndicator color={theme.text} accessibilityLabel="Opening ClassLens" />
+            <ActivityIndicator color={theme.text} accessibilityLabel="Opening Chalkwise" />
           )}
         </View>
       ) : null}

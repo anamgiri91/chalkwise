@@ -1,3 +1,6 @@
+# Renamed to Chalkwise everywhere except here. This id and the deployed
+# CLASSLENS_DEMO_PUBLISHABLE_KEY secret bind to the existing remote Supabase
+# project; renaming either breaks the legacy adapter until the remote changes too.
 project_id = "classlens"
 
 [functions.analyze-material]

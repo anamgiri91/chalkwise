@@ -16,17 +16,17 @@ export async function openDatabase(config: Config): Promise<Database> {
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000,
     statement_timeout: 10000,
-    application_name: 'classlens-api',
+    application_name: 'chalkwise-api',
   });
   // RLS is ineffective for superusers, BYPASSRLS roles and table owners.
   try {
     const result = await pool.query(`SELECT r.rolsuper OR r.rolbypassrls OR EXISTS (
       SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname='classlens' AND pg_has_role(current_user,c.relowner,'MEMBER')
+      WHERE n.nspname='chalkwise' AND pg_has_role(current_user,c.relowner,'MEMBER')
     ) AS unsafe FROM pg_roles r WHERE r.rolname=current_user`);
     if (result.rows[0]?.unsafe)
       throw new Error('API must use a non-owner database role without BYPASSRLS.');
-    await pool.query('SELECT 1 FROM classlens.courses LIMIT 0');
+    await pool.query('SELECT 1 FROM chalkwise.courses LIMIT 0');
   } catch (error) {
     await pool.end();
     throw error;

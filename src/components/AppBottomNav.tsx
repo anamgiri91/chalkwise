@@ -62,7 +62,7 @@ export function AppBottomNav({ vertical = false }: { vertical?: boolean }) {
             <View style={styles.logo}>
               <AppIcon name="camera" color="white" size={22} />
             </View>
-            <ThemedText style={styles.brandName}>ClassLens</ThemedText>
+            <ThemedText style={styles.brandName}>Chalkwise</ThemedText>
           </View>
           <ThemedText type="small" themeColor="textSecondary" style={{ marginBottom: 28 }}>
             Your learning workspace

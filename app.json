@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "ClassLens",
-    "slug": "classLens",
+    "name": "Chalkwise",
+    "slug": "chalkwise",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/classlens-icon.png",
-    "scheme": "classlens",
+    "icon": "./assets/images/chalkwise-icon.png",
+    "scheme": "chalkwise",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.rejan-karki1.classLens",
+      "bundleIdentifier": "com.rejan-karki1.chalkwise",
       "backgroundColor": "#234E3C"
     },
     "android": {
@@ -36,12 +36,12 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#234E3C",
-          "image": "./assets/images/classlens-splash.png",
+          "image": "./assets/images/chalkwise-splash.png",
           "imageWidth": 240,
           "resizeMode": "contain",
           "dark": {
             "backgroundColor": "#234E3C",
-            "image": "./assets/images/classlens-splash.png"
+            "image": "./assets/images/chalkwise-splash.png"
           }
         }
       ],
@@ -50,7 +50,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow ClassLens to use your camera to capture class material.",
+          "cameraPermission": "Allow Chalkwise to use your camera to capture class material.",
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": false
         }
@@ -63,7 +63,7 @@
     },
     "splash": {
       "backgroundColor": "#234E3C",
-      "image": "./assets/images/classlens-splash.png",
+      "image": "./assets/images/chalkwise-splash.png",
       "resizeMode": "contain"
     }
   }

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { ClassLensLogo } from '@/components/ClassLensLogo';
+import { ChalkwiseLogo } from '@/components/ChalkwiseLogo';
 import { ThemedText } from '@/components/themed-text';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { Screen } from '@/components/ui/Screen';
@@ -47,7 +47,7 @@ export default function LoginScreen() {
   return (
     <Screen avoidKeyboard>
       <View style={styles.header}>
-        <ClassLensLogo compact />
+        <ChalkwiseLogo compact />
       </View>
 
       <View style={styles.intro}>

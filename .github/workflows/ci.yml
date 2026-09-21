@@ -1,4 +1,4 @@
-name: ClassLens checks
+name: Chalkwise checks
 
 on:
   pull_request:
@@ -30,7 +30,7 @@ jobs:
         env:
           EXPO_PUBLIC_DATA_MODE: mock
       - run: git diff --check
-      - run: docker build -f server/Dockerfile -t classlens-api:test .
+      - run: docker build -f server/Dockerfile -t chalkwise-api:test .
 
   database-isolation:
     # The schema is applied only to this disposable service, never to RDS or Supabase.
@@ -40,7 +40,7 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_DB: classlens_test
+          POSTGRES_DB: chalkwise_test
           POSTGRES_PASSWORD: local-ci-only
         ports: ['5432:5432']
         options: >-
@@ -62,13 +62,13 @@ jobs:
         env:
           PGHOST: localhost
           PGUSER: postgres
-          PGDATABASE: classlens_test
+          PGDATABASE: chalkwise_test
           PGPASSWORD: local-ci-only
         run: |
           psql -v ON_ERROR_STOP=1 -f server/infra/runtime-role.sql
           psql -v ON_ERROR_STOP=1 -f server/migrations/001_initial.sql
-          psql -v ON_ERROR_STOP=1 -c "CREATE ROLE classlens_runtime LOGIN PASSWORD 'local-test-only' NOSUPERUSER NOBYPASSRLS; GRANT classlens_app TO classlens_runtime;"
+          psql -v ON_ERROR_STOP=1 -c "CREATE ROLE chalkwise_runtime LOGIN PASSWORD 'local-test-only' NOSUPERUSER NOBYPASSRLS; GRANT chalkwise_app TO chalkwise_runtime;"
       - name: Verify row-level access using the non-owner runtime login
         run: npm run test:db --prefix server
         env:
-          TEST_DATABASE_URL: postgres://classlens_runtime:local-test-only@localhost:5432/classlens_test
+          TEST_DATABASE_URL: postgres://chalkwise_runtime:local-test-only@localhost:5432/chalkwise_test

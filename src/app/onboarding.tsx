@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { ClassLensLogo } from '@/components/ClassLensLogo';
+import { ChalkwiseLogo } from '@/components/ChalkwiseLogo';
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
 import { Brand, Fonts } from '@/constants/theme';
@@ -44,7 +44,7 @@ export default function OnboardingScreen() {
   return (
     <Screen avoidKeyboard>
       <View style={styles.header}>
-        <ClassLensLogo compact />
+        <ChalkwiseLogo compact />
       </View>
 
       <View style={styles.intro}>
@@ -53,7 +53,7 @@ export default function OnboardingScreen() {
         </ThemedText>
 
         <ThemedText themeColor="textSecondary">
-          Three quick things, so classmates can find you and ClassLens fits your program.
+          Three quick things, so classmates can find you and Chalkwise fits your program.
         </ThemedText>
       </View>
 
@@ -142,7 +142,7 @@ export default function OnboardingScreen() {
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Enter ClassLens"
+        accessibilityLabel="Enter Chalkwise"
         accessibilityState={{ disabled: !ready || busy, busy }}
         disabled={!ready || busy}
         onPress={submit}
@@ -154,7 +154,7 @@ export default function OnboardingScreen() {
       >
         {busy
           ? <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
-          : <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>Enter ClassLens  →</ThemedText>}
+          : <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>Enter Chalkwise  →</ThemedText>}
       </Pressable>
     </Screen>
   );

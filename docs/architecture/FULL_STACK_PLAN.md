@@ -1,12 +1,12 @@
-# ClassLens: from lecture capture to a dependable study companion
+# Chalkwise: from lecture capture to a dependable study companion
 
-Status: checkpoints 0–4 implemented and locally committed; checkpoint 5 adds verification, CI, and the deployment handoff. Live database, browser/device, and AWS acceptance remain open. Approved direction: full-stack redesign with an AWS-deployable replacement for Supabase; local commits at each completed checkpoint. No cloud deployment or database migration is authorized.
+Status: checkpoints 0–5 implemented and locally committed through `722582e`. Live database, browser/device, and AWS acceptance remain open. The user confirmed PostgreSQL on Amazon RDS and approved package installation and local checks. No cloud deployment or database migration is authorized. The [clarified product workflow plan](PRODUCT_WORKFLOW_PLAN.md) defines the next milestones: website uploads, editable source-linked notes, problem sets, learning support, and web research only after explicit approval.
 
 ## Product decision
 
-Keep the existing audience: college students in a small pilot of 10–20 people. ClassLens should help a student answer three questions: What happened in class? What do I need to understand? What should I review next?
+Serve students organizing their own study material in a small pilot of 10–20 people. The user clarified that whiteboard uploads, loose notes, and problem sets are central; the website should work before a student chooses a course. Keep the existing course/mobile workflows while adding a course-optional inbox and editable notebooks. The product should help a student answer: What does my material say? How does it fit together? What should I practice next?
 
-The main loop is **capture → verify the original → organize → retrieve from memory → review again**. Success means useful learning activity, not the number of AI summaries generated. The app must keep original photos accessible, label AI output, avoid invented deadlines or mastery scores, and let the student decide what is shared.
+The main loop is **upload → check the extraction → organize and edit → practice → review**. Missing context may lead to an optional research request: ask first, search only within the approved scope, then show cited additions for acceptance. Success means useful learning activity, not the number of AI summaries generated. The app must keep original photos accessible, label AI output and external additions, avoid invented deadlines or mastery scores, and let the student decide what is shared.
 
 Measure in a pilot: successful capture-to-notebook completion, return to review within a week, recovery from failed uploads, and whether students can explain a concept after reviewing. No telemetry is collected in this change; these are pilot evaluation questions.
 
@@ -52,7 +52,7 @@ Each completed checkpoint gets a local commit. If required verification cannot r
 | PostgreSQL API | `b256551` | API/auth/storage/recovery tests and server typecheck |
 | App integration | `9ec8c27` | Session/HTTP tests and app typecheck |
 | Study workspace | `efd1cf0` | Domain/capture tests, app/server checks and web export |
-| Verification and handoff | Commit containing this record | [Verification results and open gates](VERIFICATION.md), [AWS runbook](AWS_DEPLOYMENT.md), and CI configuration |
+| Verification and handoff | `722582e` | [Verification results and open gates](VERIFICATION.md), [AWS runbook](AWS_DEPLOYMENT.md), and CI configuration |
 
 These are implementation checkpoints, not production acceptance certificates. The RLS test must run against a real disposable PostgreSQL instance, and the device checklist must be exercised before live cutover. Hardware remains a later product decision; its useful role would be authenticated, student-initiated capture feeding the same material API.
 

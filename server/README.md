@@ -1,11 +1,11 @@
-# ClassLens API
+# Chalkwise API
 
 Node 22.18+ / TypeScript / Fastify / PostgreSQL. Run commands from `server/` unless specified. This service does not use Supabase. Existing Supabase code is a separate migration fallback in the app.
 
 ## Setup
 
 1. Install locked dependencies with `npm ci`.
-2. Provision a PostgreSQL database and distinct migration/runtime identities. Review `infra/runtime-role.sql`, then `migrations/001_initial.sql`. Apply them only after explicit approval; startup never applies migrations. Grant `classlens_app` to the runtime login, never the migration role. The API refuses a superuser, BYPASSRLS login or table-owner membership.
+2. Provision a PostgreSQL database and distinct migration/runtime identities. Review `infra/runtime-role.sql`, then `migrations/001_initial.sql`. Apply them only after explicit approval; startup never applies migrations. Grant `chalkwise_app` to the runtime login, never the migration role. The API refuses a superuser, BYPASSRLS login or table-owner membership.
 3. Configure a Cognito user pool with email verification, email sign-in, a public app client with **no client secret**, `ALLOW_USER_PASSWORD_AUTH` and `ALLOW_REFRESH_TOKEN_AUTH`. Use 5-minute access tokens, disable remembered devices and refresh-token rotation for this initial client implementation. The confirmation flow uses an emailed code. Enforce the pilot's email domain or invitation policy through a Cognito pre-sign-up trigger; a client-side domain check is not an access control. Do not disable verification.
 4. Provision a private S3 bucket with Block Public Access and default encryption. Use an IAM role limited to GetObject and PutObject in that bucket. No bucket listing or deletion is required by the API. Add a lifecycle policy only after reviewing pending-upload retention needs.
 5. Copy `.env.example` to `.env`; supply real values. Use AWS SDK standard credentials locally, a task IAM role on AWS, and Secrets Manager for database and Gemini credentials. No credentials belong in `EXPO_PUBLIC_*` variables.
@@ -51,4 +51,4 @@ node --test tests/domain.test.ts
 
 Route tests inject repository/provider boundaries; they do not establish live database or cloud behavior. Signed-JWT tests use real RSA signatures. Run the database suite and the two-account device checklist before production cutover.
 
-Build the API image from the repository root: `docker build -f server/Dockerfile -t classlens-api .`. This image runs as a non-root user. Deploy later to one ECS service with an HTTPS load balancer, private RDS and S3; AWS provisioning and deployment are not performed by this change.
+Build the API image from the repository root: `docker build -f server/Dockerfile -t chalkwise-api .`. This image runs as a non-root user. Deploy later to one ECS service with an HTTPS load balancer, private RDS and S3; AWS provisioning and deployment are not performed by this change.

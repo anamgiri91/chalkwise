@@ -9,7 +9,7 @@ No npm packages or Gemini SDK are required: the handler uses fetch and Web APIs.
 
 1. Create a Gemini API key in Google AI Studio. Ensure gemini-3.1-flash-lite is
    available to the associated project and configure suitable provider quotas.
-2. Open the ClassLens project in Supabase Dashboard → Edge Functions → Secrets.
+2. Open the Chalkwise project in Supabase Dashboard → Edge Functions → Secrets.
    Add GEMINI_API_KEY with the Gemini key. Add CLASSLENS_DEMO_PUBLISHABLE_KEY with
    the exact publishable key used by the Expo app. Do not copy Gemini credentials
    into Expo, EXPO_PUBLIC_* variables, source files, terminal arguments, or Git.
@@ -21,7 +21,7 @@ No npm packages or Gemini SDK are required: the handler uses fetch and Web APIs.
    supabase functions deploy analyze-material --project-ref <project-ref> --no-verify-jwt
    ```
 
-   Replace <project-ref> with the ClassLens project reference from the dashboard.
+   Replace <project-ref> with the Chalkwise project reference from the dashboard.
    No database migration, database push, Storage policy change, or local PostgreSQL
    installation is needed. The deploy command is manual; repository setup does not
    deploy anything. The config file also records verify_jwt = false.

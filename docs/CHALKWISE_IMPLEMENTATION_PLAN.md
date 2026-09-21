@@ -1,4 +1,11 @@
-# ClassLens Evolution — Full Implementation Plan (≤20 Users)
+# Chalkwise Evolution — Full Implementation Plan (≤20 Users)
+
+> **September 21, 2026 product clarification:** The primary workflow is now a website
+> that organizes uploaded whiteboard photos, loose notes, and problem sets into editable
+> notebooks, helps the student learn, and asks before researching missing context on the
+> web. [The product workflow plan](architecture/PRODUCT_WORKFLOW_PLAN.md) governs the next
+> product milestones. PostgreSQL on Amazon RDS is confirmed. The historical feature list
+> below does not authorize starting later milestones or taking priority over this direction.
 
 > **September 2026 architecture update:** The user has requested an AWS-deployable
 > replacement for Supabase, a UI redesign, meaningful study workflows, tests and
@@ -79,7 +86,7 @@ Everything from the original analysis, with infrastructure sized for reality:
 ### Primary Flow: Rapid Capture with Quality Check
 
 ```text
-Student opens ClassLens
+Student opens Chalkwise
     │
     ▼
 Camera is IMMEDIATELY active
@@ -172,7 +179,7 @@ Lecture notebook opens
 ### Secondary Flow: Review Semester Notebook
 
 ```text
-Student opens ClassLens → Home
+Student opens Chalkwise → Home
     │
     ▼
 Home screen shows courses + recent sessions
@@ -243,7 +250,7 @@ Send push notification to Rejan:
  Prashant captured 4 pages."
     │
     ▼
-Rejan opens ClassLens → CatchUp tab
+Rejan opens Chalkwise → CatchUp tab
     │
     ▼
 CatchUp screen:
@@ -842,7 +849,7 @@ CREATE INDEX opportunities_recipient ON catchup_opportunities(recipient_id, stat
 
 ### New / Modified Services
 
-#### [NEW] [schedule.ts](file:///Users/admin/Desktop/classLens/src/services/schedule.ts)
+#### [NEW] [schedule.ts](file:///Users/admin/Desktop/chalkwise/src/services/schedule.ts)
 ```ts
 getMySchedule(): Promise<CourseSchedule[]>
 setSchedule(courseId: string, slots: ScheduleSlot[]): Promise<void>
@@ -850,14 +857,14 @@ suggestCourseForNow(): Promise<Course | null>
 // Checks current day + time against user's enrolled course schedules
 ```
 
-#### [NEW] [enrollment.ts](file:///Users/admin/Desktop/classLens/src/services/enrollment.ts)
+#### [NEW] [enrollment.ts](file:///Users/admin/Desktop/chalkwise/src/services/enrollment.ts)
 ```ts
 getMyEnrollments(): Promise<CourseEnrollment[]>
 enrollInCourse(courseId: string): Promise<void>
 unenrollFromCourse(courseId: string): Promise<void>
 ```
 
-#### [NEW] [captures.ts](file:///Users/admin/Desktop/classLens/src/services/captures.ts)
+#### [NEW] [captures.ts](file:///Users/admin/Desktop/chalkwise/src/services/captures.ts)
 ```ts
 uploadCapture(input: CaptureUploadInput): Promise<Capture>
 uploadCaptures(inputs: CaptureUploadInput[]): Promise<Capture[]>
@@ -865,21 +872,21 @@ getSessionCaptures(sessionId: string): Promise<Capture[]>
 getCaptureUrl(capture: Capture): Promise<string | null>
 ```
 
-#### [NEW] [sessions.ts](file:///Users/admin/Desktop/classLens/src/services/sessions.ts)
+#### [NEW] [sessions.ts](file:///Users/admin/Desktop/chalkwise/src/services/sessions.ts)
 ```ts
 createSession(courseId: string, date: string): Promise<LectureSession>
 getOrCreateSession(courseId: string, date: string): Promise<LectureSession>
 getCourseSessions(courseId: string): Promise<LectureSession[]>
 ```
 
-#### [NEW] [notebooks.ts](file:///Users/admin/Desktop/classLens/src/services/notebooks.ts)
+#### [NEW] [notebooks.ts](file:///Users/admin/Desktop/chalkwise/src/services/notebooks.ts)
 ```ts
 createNotebook(input: CreateNotebookInput): Promise<SessionNotebook>
 getNotebook(sessionId: string): Promise<SessionNotebook | null>
 getUserNotebooks(courseId?: string): Promise<SessionNotebook[]>
 ```
 
-#### [NEW] [catchup.ts](file:///Users/admin/Desktop/classLens/src/services/catchup.ts)
+#### [NEW] [catchup.ts](file:///Users/admin/Desktop/chalkwise/src/services/catchup.ts)
 ```ts
 getMyOpportunities(): Promise<CatchUpOpportunity[]>
 viewOpportunity(id: string): Promise<void>
@@ -887,7 +894,7 @@ addToMyNotes(opportunityId: string): Promise<SessionNotebook>
 dismissOpportunity(id: string): Promise<void>
 ```
 
-#### [MODIFY] [ai.ts](file:///Users/admin/Desktop/classLens/src/services/ai.ts)
+#### [MODIFY] [ai.ts](file:///Users/admin/Desktop/chalkwise/src/services/ai.ts)
 ```ts
 // NEW: batch analysis for multi-photo sessions
 analyzeCaptures(captures: Capture[]): Promise<CaptureAnalysis>
@@ -923,7 +930,7 @@ generateNotebookQuiz(notebookId: string): Promise<GenerateQuizResult>
 
 ### New / Modified Screens
 
-#### [MODIFY] [capture.tsx](file:///Users/admin/Desktop/classLens/src/app/capture.tsx)
+#### [MODIFY] [capture.tsx](file:///Users/admin/Desktop/chalkwise/src/app/capture.tsx)
 **Major evolution:**
 - Camera opens immediately — no intro card on first load
 - Multi-photo session: bottom thumbnail strip shows captured photos
@@ -931,7 +938,7 @@ generateNotebookQuiz(notebookId: string): Promise<GenerateQuizResult>
 - After capture: calls `suggestCourseForNow()` to pre-fill course
 - "Done" → passes all photo URIs to processing
 
-#### [MODIFY] [processing.tsx](file:///Users/admin/Desktop/classLens/src/app/processing.tsx)
+#### [MODIFY] [processing.tsx](file:///Users/admin/Desktop/chalkwise/src/app/processing.tsx)
 **Major evolution:**
 - Uploads all photos sequentially with progress
 - Calls `analyze-captures` with all capture IDs (ONE Gemini call)
@@ -956,7 +963,7 @@ generateNotebookQuiz(notebookId: string): Promise<GenerateQuizResult>
 - AI study notes with existing summary/concepts/points layout
 - Ask + Quiz buttons wired to notebook
 
-#### [MODIFY] [catchup.tsx](file:///Users/admin/Desktop/classLens/src/app/catchup.tsx)
+#### [MODIFY] [catchup.tsx](file:///Users/admin/Desktop/chalkwise/src/app/catchup.tsx)
 - Replace hardcoded demo with real `catchup_opportunities` query
 - Show pending opportunities with friend name, course, capture count
 - "View" → read-only notebook with friend's captures
@@ -970,7 +977,7 @@ generateNotebookQuiz(notebookId: string): Promise<GenerateQuizResult>
 
 ### New Types
 
-#### [NEW] [types/captures.ts](file:///Users/admin/Desktop/classLens/src/types/captures.ts)
+#### [NEW] [types/captures.ts](file:///Users/admin/Desktop/chalkwise/src/types/captures.ts)
 ```ts
 export type Capture = {
   id: string;
@@ -992,7 +999,7 @@ export type CaptureUploadInput = {
 };
 ```
 
-#### [NEW] [types/analysis.ts](file:///Users/admin/Desktop/classLens/src/types/analysis.ts)
+#### [NEW] [types/analysis.ts](file:///Users/admin/Desktop/chalkwise/src/types/analysis.ts)
 ```ts
 export type CaptureAnalysis = {
   readability: 'good' | 'partial' | 'unreadable';
@@ -1019,7 +1026,7 @@ export type CaptureAnalysis = {
 };
 ```
 
-#### [NEW] [types/sessions.ts](file:///Users/admin/Desktop/classLens/src/types/sessions.ts)
+#### [NEW] [types/sessions.ts](file:///Users/admin/Desktop/chalkwise/src/types/sessions.ts)
 ```ts
 export type LectureSession = {
   id: string;
@@ -1059,7 +1066,7 @@ export type CatchUpOpportunity = {
 };
 ```
 
-#### [NEW] [types/schedule.ts](file:///Users/admin/Desktop/classLens/src/types/schedule.ts)
+#### [NEW] [types/schedule.ts](file:///Users/admin/Desktop/chalkwise/src/types/schedule.ts)
 ```ts
 export type CourseSchedule = {
   id: string;
@@ -1175,7 +1182,7 @@ At ≤20 users, this logic runs synchronously in the processing screen, not in a
 - [ ] **Keep email confirmation ON** (it is already on — do not disable it)
   - Proves the user owns a real `@txstate.edu` inbox
   - Required for a trusted small network where people connect with classmates they know
-- [ ] **Fix [`auth.ts`](file:///Users/admin/Desktop/classLens/src/services/auth.ts) `signUp()` — remove the hackathon-era error (line 78–80):**
+- [ ] **Fix [`auth.ts`](file:///Users/admin/Desktop/chalkwise/src/services/auth.ts) `signUp()` — remove the hackathon-era error (line 78–80):**
   ```ts
   // Remove this throw — it was written for the demo where email confirm was off:
   // if (!data.session) { throw new Error('Account created, but email confirmation is on...') }
@@ -1183,7 +1190,7 @@ At ≤20 users, this logic runs synchronously in the processing screen, not in a
   // Replace with: treat no-session as success, let UI show the check-email state
   if (!data.session) return; // email confirmation pending — expected and correct
   ```
-- [ ] **Add "Check your email" state to [`signup.tsx`](file:///Users/admin/Desktop/classLens/src/app/signup.tsx):**
+- [ ] **Add "Check your email" state to [`signup.tsx`](file:///Users/admin/Desktop/chalkwise/src/app/signup.tsx):**
   - After `signUp()` returns without error, show:
     > "We sent a confirmation link to your TXST email. Click it to activate your account, then come back and sign in."
   - Simple screen — no navigation, just a message + "Go to sign in" button
@@ -1213,7 +1220,7 @@ At ≤20 users, this logic runs synchronously in the processing screen, not in a
 
 ### Milestone 2: Rapid Camera + Quality Detection (Week 2-3)
 
-The camera experience that makes ClassLens feel different from "upload a photo":
+The camera experience that makes Chalkwise feel different from "upload a photo":
 
 - [ ] Rebuild `capture.tsx` as a **camera-first** screen:
   - Camera viewfinder fills screen immediately on open

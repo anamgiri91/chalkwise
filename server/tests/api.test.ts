@@ -20,7 +20,7 @@ async function setup(overrides: Partial<Repository> = {}, ping = async () => {})
   return buildApp({
     repo,
     ping,
-    origins: ['https://classlens.example'],
+    origins: ['https://chalkwise.example'],
     verify: async (token) => {
       if (token !== 'test-token') throw new ApiError(401, 'UNAUTHENTICATED', 'Sign in again.');
       return user;
