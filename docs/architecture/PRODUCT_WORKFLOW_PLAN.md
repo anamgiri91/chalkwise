@@ -12,7 +12,7 @@ The product should make the distinction between **what was uploaded**, **how Cha
 
 ## Existing implementation and actual gaps
 
-The current working tree includes additional AI/capture work beyond the committed checkpoint `722582e`. Inspection confirms the code paths below; it does not establish live provider, browser, or device acceptance. Preserve and review these changes instead of rebuilding them.
+The current working tree includes additional AI/capture work beyond the committed checkpoint `c3067f1`. Inspection confirms the code paths below; it does not establish live provider, browser, or device acceptance. Preserve and review these changes instead of rebuilding them.
 
 | Capability | Current evidence | Remaining product work |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ Model calls form bounded stages: extract each source, organize extracted content
 
 For 10–20 users, start with one API deployment and PostgreSQL-backed job records. A bounded worker in the same deployment can resume work from persisted states. Do not introduce a distributed agent framework or separate queue service before measured load requires one. Record processing version, timing, outcome, and provider usage without placing private notes or credentials in logs. Version prompt changes and test them against saved evaluation cases.
 
-The existing uncommitted AI/capture edits require review before they become a foundation. This plan does not incorporate them by assumption or authorize discarding them. The last verified committed application checkpoint is `722582e`; its [verification report](VERIFICATION.md) still identifies the open live-database and device checks.
+The existing uncommitted AI/capture edits require review before they become a foundation. This plan does not incorporate them by assumption or authorize discarding them. The last verified committed application checkpoint is `c3067f1`; its [verification report](VERIFICATION.md) still identifies the open live-database and device checks.
 
 ## Delivery order and acceptance gates
 

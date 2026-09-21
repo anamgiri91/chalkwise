@@ -1,6 +1,6 @@
 # Chalkwise: from lecture capture to a dependable study companion
 
-Status: checkpoints 0–5 implemented and locally committed through `722582e`. Live database, browser/device, and AWS acceptance remain open. The user confirmed PostgreSQL on Amazon RDS and approved package installation and local checks. No cloud deployment or database migration is authorized. The [clarified product workflow plan](PRODUCT_WORKFLOW_PLAN.md) defines the next milestones: website uploads, editable source-linked notes, problem sets, learning support, and web research only after explicit approval.
+Status: checkpoints 0–5 implemented and locally committed through `c3067f1`. Live database, browser/device, and AWS acceptance remain open. The user confirmed PostgreSQL on Amazon RDS and approved package installation and local checks. No cloud deployment or database migration is authorized. The [clarified product workflow plan](PRODUCT_WORKFLOW_PLAN.md) defines the next milestones: website uploads, editable source-linked notes, problem sets, learning support, and web research only after explicit approval.
 
 ## Product decision
 
@@ -47,12 +47,12 @@ Each completed checkpoint gets a local commit. If required verification cannot r
 
 | Checkpoint | Local commit | Evidence |
 | --- | --- | --- |
-| Original archive | `9f7d1f2` | Original project preserved before implementation |
-| Product plan | `0980c2e` | Scope, architecture, migration path and test gates |
-| PostgreSQL API | `b256551` | API/auth/storage/recovery tests and server typecheck |
-| App integration | `9ec8c27` | Session/HTTP tests and app typecheck |
-| Study workspace | `efd1cf0` | Domain/capture tests, app/server checks and web export |
-| Verification and handoff | `722582e` | [Verification results and open gates](VERIFICATION.md), [AWS runbook](AWS_DEPLOYMENT.md), and CI configuration |
+| Original archive | `26aae61` | Original project preserved before implementation |
+| Product plan | `5ba695f` | Scope, architecture, migration path and test gates |
+| PostgreSQL API | `34ebdf9` | API/auth/storage/recovery tests and server typecheck |
+| App integration | `a27529c` | Session/HTTP tests and app typecheck |
+| Study workspace | `6d129c3` | Domain/capture tests, app/server checks and web export |
+| Verification and handoff | `c3067f1` | [Verification results and open gates](VERIFICATION.md), [AWS runbook](AWS_DEPLOYMENT.md), and CI configuration |
 
 These are implementation checkpoints, not production acceptance certificates. The RLS test must run against a real disposable PostgreSQL instance, and the device checklist must be exercised before live cutover. Hardware remains a later product decision; its useful role would be authenticated, student-initiated capture feeding the same material API.
 
