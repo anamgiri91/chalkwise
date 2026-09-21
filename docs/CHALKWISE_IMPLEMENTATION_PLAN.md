@@ -1,5 +1,12 @@
 # Chalkwise Evolution — Full Implementation Plan (≤20 Users)
 
+> **Current whole-project roadmap:** [PROJECT_PLAN.md](PROJECT_PLAN.md) defines the next
+> checkpoints, dependencies, tests and commit boundaries. [architecture.md](../architecture.md)
+> defines the technology stack and Mermaid system, processing, consent, deployment and data
+> diagrams. The user selected **generated practice problems from notes** as the first
+> problem-set feature. These documents supersede conflicting future scope in the historical
+> plan below while preserving the operational contracts of implemented features.
+
 > **September 21, 2026 product clarification:** The primary workflow is now a website
 > that organizes uploaded whiteboard photos, loose notes, and problem sets into editable
 > notebooks, helps the student learn, and asks before researching missing context on the

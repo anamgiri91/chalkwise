@@ -1,10 +1,10 @@
 # Chalkwise: turn scattered material into a notebook you can learn from
 
-Status: product direction clarified by the user on September 21, 2026. This document plans the next product milestones; it does not claim they are implemented or authorize applying migrations or deploying services. PostgreSQL on Amazon RDS is the confirmed database direction. Package installation and local checks are authorized; deployment and source-data migration remain separate.
+Status: product direction clarified by the user on September 21, 2026. The first problem-set feature is **generating new practice problems from notes**. This document specifies product behavior; the [whole-project roadmap](../PROJECT_PLAN.md) supplies checkpoints, and [architecture.md](../../architecture.md) supplies the technology inventory and Mermaid diagrams. Future milestones are not implemented by this plan. PostgreSQL on Amazon RDS is confirmed. Package installation and local checks are authorized; deployment and source-data migration remain separate.
 
 ## Product promise
 
-Upload whiteboard photos, handwritten notes, or a problem sheet. Chalkwise makes an editable, well-ordered notebook, connects problems to the concepts they use, and helps the student practice. When context appears to be missing, Chalkwise asks before searching the web and presents cited additions for review.
+Upload whiteboard photos or loose notes. Chalkwise makes an editable, well-ordered notebook and generates new practice problems from its concepts. When context appears to be missing, Chalkwise asks before searching the web and presents cited additions for review. Uploaded worksheets may be source material; dedicated assignment organization and due-date tracking are separate future features.
 
 The first audience is students using their own learning material, with a pilot of 10–20 users. The primary entry point becomes a responsive website with upload and paste actions. Mobile capture remains supported. A course is an optional organizer: a student must be able to start in a personal inbox without choosing a university, enrolling in a course, or knowing a topic name.
 
@@ -12,7 +12,7 @@ The product should make the distinction between **what was uploaded**, **how Cha
 
 ## Existing implementation and actual gaps
 
-The current working tree includes additional AI/capture work beyond the committed checkpoint `c3067f1`. Inspection confirms the code paths below; it does not establish live provider, browser, or device acceptance. Preserve and review these changes instead of rebuilding them.
+The multi-photo pipeline is committed in `598a96d`, following the full-stack checkpoint `c3067f1`; the inspected checkout also includes the Chalkwise rename and UI refinements. Inspection confirms the code paths below; it does not establish live provider, browser, or device acceptance. Reuse these features rather than rebuilding them.
 
 | Capability | Current evidence | Remaining product work |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ The current working tree includes additional AI/capture work beyond the committe
 | Ordering | Material IDs and successful extraction results retain input order | Infer page sequence, identify overlapping board photos, and provide a reversible user override |
 | Website | Expo web export and CI build configuration already exist; the app has responsive navigation | Desktop upload, source inspection, and notebook editing interactions need browser acceptance |
 | Other inputs | Photo ingestion exists; a document-picker dependency is installed | Typed/pasted text and PDFs need real ingestion, validation, and extraction paths |
-| Problem sets | `Lecture.assignments` is a list of mentions | Choose the intended feature before adding per-problem, task, or practice records |
+| Problem sets | `Lecture.assignments` is a list of mentions; quiz generation exists | Extend quiz capability into persistent generated practice sets with source references, attempts and hints |
 | Learning | Ask This Lecture, generated quizzes, and again/good/easy reviews exist | Reuse them; add source links and problem-specific support only where needed |
 | Web enrichment | No search/consent/result-layer implementation | Build only after attribution and evaluation gates are in place |
 
@@ -35,16 +35,16 @@ The draft orchestration/evaluation document describes useful future work, but so
 3. **Organize.** Reuse the existing extraction/organization stages. Add a sequence proposal using page numbers, headings, and continuity; preserve original source positions and let the student override it. Identify duplicate or overlapping board photos without deleting originals or dropping a newly added line. Produce sections such as Concepts, Definitions, Worked Examples, Formulas, and Problem Sets when supported. Keep problem statements complete. Suggest a topic and destination notebook; let the student correct them. An unrelated upload goes to the inbox instead of being forced into an existing subject.
 4. **Review and save.** Show a draft with source links and suggested organization. The student can edit, reorder, accept, or undo. Adding material to an existing notebook creates a proposed revision; it must not overwrite previous corrections or silently merge unrelated topics.
 5. **Resolve gaps, optionally.** A note might refer to a theorem without stating it, or a prerequisite without explaining it. Offer a specific research request. If the student declines, leave a visible gap and keep the notebook usable.
-6. **Learn.** Keep the existing Q&A, quiz, and review features. If the selected problem-set scope includes learning support, connect each problem to the relevant notebook sections and offer attempts and progressive hints. Keep generated practice distinguishable from uploaded assignments.
+6. **Learn.** Extend existing Q&A, quiz, and review features with generated practice sets. Connect each problem to its source concepts, preserve attempts, offer progressive hints, and reveal explanations on request. Keep generated practice distinguishable from uploaded assignments.
 
-Example: three whiteboard photos about integration and a worksheet become a notebook with definitions, formulas, a worked example, and the original worksheet problems. If the photos mention substitution without explaining it, offer to research that concept. A citation-backed explanation appears as a proposed addition; the original lesson stays intact.
+Example: three whiteboard photos about integration become a notebook with definitions, formulas and a worked example. The student asks for five new practice problems using those concepts. If the photos mention substitution without explaining it, offer to research that concept separately. A citation-backed explanation appears as a proposed addition; the original lesson stays intact.
 
 ## Website layout
 
 - **Inbox:** prominent Upload and Paste notes actions; unfinished drafts, unreadable pages, and unfiled material.
 - **Notebooks:** folders or topics, search, and a chronological source list. Existing courses remain available as one grouping option.
 - **Notebook workspace:** section outline on the left, editable notes in the middle, and the selected source on the right. On a narrow screen these become accessible tabs. Blocks expose their source without requiring a separate search.
-- **Problems:** uploaded problem statements linked to the concepts they use, attempts, hints, and separately labeled generated practice.
+- **Practice:** generated problem sets linked to the concepts they use, attempts, hints and explanations; no implied lecturer assignment or due date.
 - **Review:** a small queue based on attempted problems and explicit review choices. Show activity and evidence, not an uncalibrated mastery percentage.
 
 Keep the existing Expo web application and service boundary for the first milestone. A framework rewrite is not a prerequisite for validating upload, editing, and source inspection. Verify file picking, keyboard navigation, text selection, equation display, and responsive layouts in real browsers before deciding whether a separate web editor is necessary.
@@ -93,17 +93,17 @@ Google's [Gemini search-grounding documentation](https://ai.google.dev/gemini-ap
 
 ## Problem sets and learning
 
-The first problem-set scope is awaiting the user's answer. The proposed default is to organize uploaded sheets alongside notes. Do not silently implement all three distinct products:
+The user selected **Generate new practice problems from notes**. Implement that first; these remain distinct products:
 
 | Meaning | Minimum records needed |
 | --- | --- |
-| Organize an uploaded worksheet | Source sheet, problem/subpart, position, supporting concept links |
-| Track assigned work | Assignment/task, source-confirmed or user-entered due date, completion state |
-| Generate practice | Generated problem, source concept, answer/explanation, attempt history |
+| Generate practice — selected | Practice set pinned to a note revision, generated problem, source concepts, answer/explanation, hints, attempt history |
+| Organize an uploaded worksheet — deferred | Source sheet, problem/subpart, position, supporting concept links |
+| Track assigned work — deferred | Assignment/task, source-confirmed or user-entered due date, completion state |
 
-For uploaded sets, preserve wording, subparts, diagrams, and order; suggest concept links that the student can change. Do not automatically fetch solutions to uploaded assignments. Choosing one initial scope does not rule out adding the others later under separate checkpoints.
+Reuse the current quiz service for the first generation path. Let the student choose concepts and a bounded set size. Save source references and the notebook revision used so later note edits do not silently change an existing problem or answer. Generated examples may introduce new numbers, so validate the calculation and taught method rather than requiring every value to appear in the source. Do not automatically fetch solutions to uploaded assignments.
 
-If practice or problem-specific tutoring is selected, support a progression of **attempt → small hint → next-step hint → worked explanation**. Keep the student's attempt, show which step feedback addresses, and allow reveal on request. Mark machine-generated feedback as provisional unless a supported checker establishes a narrow property. For example, a numerical substitution check does not validate an entire proof.
+Support a progression of **attempt → small hint → next-step hint → worked explanation**. Keep the student's attempt, show which step feedback addresses, and allow reveal on request. Mark machine-generated feedback as provisional unless a supported checker establishes a narrow property. For example, a numerical substitution check does not validate an entire proof.
 
 Generate additional practice only as a separate action, with a label such as “Practice generated from your notes.” Validate question structure, answer consistency, and source support; do not save ambiguous or unsupported answer keys as trustworthy study material. Use short recall prompts and repeat reviews to help learning without pretending that opening a note proves understanding.
 
@@ -111,13 +111,13 @@ Generate additional practice only as a separate action, with a label such as “
 
 Keep the modular API, Cognito authentication, PostgreSQL on RDS, and private S3 originals from the existing full-stack foundation. [Amazon RDS supports PostgreSQL](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html). Screens continue to call services. The server owns model calls, research approval enforcement, validation, and access control.
 
-Add new persistence only as each milestone needs it. Candidate records are notebooks, source extractions, note revisions/blocks, source references, uploaded problems, attempts, research requests, research results, and review events. They are a design outline, not approved SQL. Keep existing lecture/course routes compatible while introducing course-optional notebooks. Use reviewed additive migrations, owner-scoped RLS, a non-owner runtime role, and transactional publication of completed revisions.
+Add new persistence only as each milestone needs it. Candidate records are notebooks, source extractions, note revisions/blocks, source references, generated practice sets/problems, attempts, research requests, research results, and review events. They are a design outline, not approved SQL. Keep existing lecture/course routes compatible while introducing course-optional notebooks. Use reviewed additive migrations, owner-scoped RLS, a non-owner runtime role, and transactional publication of completed revisions.
 
 Model calls form bounded stages: extract each source, organize extracted content, validate sources and structure, then show a draft. Store stage outcomes and stable retry identities so an interrupted job does not discard successful extraction or duplicate saved notes. Transcription success should remain accessible even if organization fails. Never silently omit an unreadable source and label the whole upload complete.
 
 For 10–20 users, start with one API deployment and PostgreSQL-backed job records. A bounded worker in the same deployment can resume work from persisted states. Do not introduce a distributed agent framework or separate queue service before measured load requires one. Record processing version, timing, outcome, and provider usage without placing private notes or credentials in logs. Version prompt changes and test them against saved evaluation cases.
 
-The existing uncommitted AI/capture edits require review before they become a foundation. This plan does not incorporate them by assumption or authorize discarding them. The last verified committed application checkpoint is `c3067f1`; its [verification report](VERIFICATION.md) still identifies the open live-database and device checks.
+The AI/capture changes are now committed; inspect their current tests and limitations before extending them. The earlier [verification report](VERIFICATION.md) applies to its historical checkpoint and identifies open live-database and device checks; it does not certify later changes.
 
 ## Delivery order and acceptance gates
 
@@ -125,13 +125,13 @@ Each completed step gets a separate local commit, a test result, and a short rec
 
 | Step | Deliverable | Acceptance and meaningful tests |
 | --- | --- | --- |
-| P0 | Reconcile baseline and confirm scope | Review the existing AI/capture changes; confirm the problem-set meaning. Keep web-first and concept-only enrichment as the proposed product defaults. No duplicate implementation of existing features. |
+| P0 | Reconcile baseline and confirm scope | Reuse the existing AI/capture work; record generated practice as the first problem-set feature, a web-first workspace, and concept-only enrichment. No duplicate implementation of existing features. |
 | P1a | Sequence and organize messy photos | Reuse extraction; add source references, sequence proposals, overlapping-board handling, visible partial failures, and reversible edits. Test reordered pages, repeated boards with new lines, conflicting page numbers, mixed subjects, and user overrides. |
 | P1b | Add text/PDF inputs and desktop upload | Paste text first, then bounded PDF page ingestion; course-optional inbox and source inspection. Test corrupt/encrypted/oversized PDFs, cancellation, file MIME mismatch, ordering, interrupted saves, owner isolation, and preserving user edits. Exercise browser upload/edit/save/reopen and keyboard flows. |
-| P2 | Selected problem-set feature | Finalize its data model only after the user's choice. For uploaded sheets: retain original wording, numbering and subparts, suggest concepts, preserve sources and undo. For tasks or generated practice: write a separate scope and acceptance contract. Reuse existing Q&A/quiz/review capabilities. |
+| P2 | Generated practice from notes | Extend quiz generation into persistent, source-linked sets, attempts, progressive hints and review. Test answer consistency, unsupported concepts, changed numeric examples, revision pinning, owner isolation, reveal behavior and retry safety. |
 | P3a | Source and enrichment evaluation foundation | Versioned fixtures, recorded-response replay, metric tests, a documented baseline, and manually reviewed examples. Include the reproduced negation/deadline failures and malicious retrieved pages. Separate source-extraction mistakes from organization/enrichment mistakes. No live search in normal CI. |
 | P3b | Research with approval | Gap preview, scoped server-verified consent, cited proposed additions, and explicit acceptance in a separate removable layer. Test zero search calls before approval and after rejection; cross-user access; stale/expired consent; bounded retries; scope changes; missing or irrelevant citations; injection; and the prohibition on assignments, deadlines, exam dates, or board reconstruction. P3a is a prerequisite. |
-| P5 | Pilot acceptance | Run real PostgreSQL isolation, cloud integration and backup/restore checks; browser/accessibility and physical-device capture checks; document latency, cost, failures, and student feedback before expanding access. |
+| P4 | Pilot acceptance | Run real PostgreSQL isolation, cloud integration and backup/restore checks; browser/accessibility and physical-device capture checks; document latency, cost, failures, and student feedback before expanding access. |
 
 For code milestones, run both TypeScript checks, the relevant automated suites, formatting and `git diff --check`. Run the web export for UI changes. Stub search/model calls in ordinary tests so CI does not spend money or disclose notes; provider-backed evaluation is an explicit separate run. Database tests use only a disposable test database. Package installation approval does not authorize applying a schema to RDS or moving existing data.
 

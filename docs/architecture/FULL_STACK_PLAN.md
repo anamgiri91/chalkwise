@@ -4,6 +4,11 @@ Status: checkpoints 0–5 implemented and locally committed through `c3067f1`. L
 
 ## Product decision
 
+The [whole-project roadmap](../PROJECT_PLAN.md) and root [architecture.md](../../architecture.md)
+now define the forward milestones and technology inventory. This document retains the
+earlier full-stack delivery record. The user chose generated practice problems from notes
+as the first problem-set feature; a dedicated assignment tracker is deferred.
+
 Serve students organizing their own study material in a small pilot of 10–20 people. The user clarified that whiteboard uploads, loose notes, and problem sets are central; the website should work before a student chooses a course. Keep the existing course/mobile workflows while adding a course-optional inbox and editable notebooks. The product should help a student answer: What does my material say? How does it fit together? What should I practice next?
 
 The main loop is **upload → check the extraction → organize and edit → practice → review**. Missing context may lead to an optional research request: ask first, search only within the approved scope, then show cited additions for acceptance. Success means useful learning activity, not the number of AI summaries generated. The app must keep original photos accessible, label AI output and external additions, avoid invented deadlines or mastery scores, and let the student decide what is shared.
