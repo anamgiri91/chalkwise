@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "ClassLens",
+    "slug": "classLens",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/classlens-icon.png",
+    "scheme": "classlens",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.rejan-karki1.classLens",
+      "backgroundColor": "#234E3C"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#234E3C",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#234E3C",
+          "image": "./assets/images/classlens-splash.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#234E3C",
+            "image": "./assets/images/classlens-splash.png"
+          }
+        }
+      ],
+      "expo-audio",
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ClassLens to use your camera to capture class material.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "splash": {
+      "backgroundColor": "#234E3C",
+      "image": "./assets/images/classlens-splash.png",
+      "resizeMode": "contain"
+    }
+  }
+}
