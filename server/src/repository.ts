@@ -28,13 +28,13 @@ export function repository(database: Database, storage: Storage) {
   return {
     profile: (user: string, id = user) =>
       run(user, (db) =>
-        one(db, 'SELECT id,name,year,major FROM classlens.profiles WHERE id=$1', [id]),
+        one(db, 'SELECT id,name,year,major FROM chalkwise.profiles WHERE id=$1', [id]),
       ),
     saveProfile: (user: string, input: z.infer<typeof profileInput>) =>
       run(user, (db) =>
         one(
           db,
-          `INSERT INTO classlens.profiles(id,name,year,major) VALUES($1,$2,$3,$4)
+          `INSERT INTO chalkwise.profiles(id,name,year,major) VALUES($1,$2,$3,$4)
        ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,year=EXCLUDED.year,major=EXCLUDED.major RETURNING id,name,year,major`,
           [user, input.name, input.year, input.major],
         ),
@@ -43,7 +43,7 @@ export function repository(database: Database, storage: Storage) {
       run(user, (db) =>
         many(
           db,
-          "SELECT id,name,year,major FROM classlens.profiles WHERE id<>$1 AND name ILIKE $2 ESCAPE '\\' ORDER BY name,id LIMIT 20",
+          "SELECT id,name,year,major FROM chalkwise.profiles WHERE id<>$1 AND name ILIKE $2 ESCAPE '\\' ORDER BY name,id LIMIT 20",
           [user, `%${query.replace(/[\\%_]/g, '\\$&')}%`],
         ),
       ),
@@ -51,13 +51,13 @@ export function repository(database: Database, storage: Storage) {
       run(user, (db) =>
         many(
           db,
-          `SELECT c.id,c.code,c.name,c.professor FROM classlens.courses c ${enrolled ? 'JOIN classlens.course_memberships m ON m.course_id=c.id AND m.user_id=$1' : ''} ORDER BY c.code,c.id LIMIT 500`,
+          `SELECT c.id,c.code,c.name,c.professor FROM chalkwise.courses c ${enrolled ? 'JOIN chalkwise.course_memberships m ON m.course_id=c.id AND m.user_id=$1' : ''} ORDER BY c.code,c.id LIMIT 500`,
           enrolled ? [user] : [],
         ),
       ),
     course: (user: string, id: string) =>
       run(user, (db) =>
-        one(db, 'SELECT id,code,name,professor FROM classlens.courses WHERE id=$1', [id]),
+        one(db, 'SELECT id,code,name,professor FROM chalkwise.courses WHERE id=$1', [id]),
       ),
     createCourse: (user: string, input: z.infer<typeof courseInput>) =>
       run(user, async (db) => {
@@ -67,21 +67,21 @@ export function repository(database: Database, storage: Storage) {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '') || randomUUID();
         await db.query(
-          'INSERT INTO classlens.courses(id,code,name,professor) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',
+          'INSERT INTO chalkwise.courses(id,code,name,professor) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',
           [id, input.code, input.name, input.professor],
         );
-        return one(db, 'SELECT id,code,name,professor FROM classlens.courses WHERE id=$1', [id]);
+        return one(db, 'SELECT id,code,name,professor FROM chalkwise.courses WHERE id=$1', [id]);
       }),
     enroll: (user: string, id: string, join: boolean) =>
       run(user, async (db) => {
         if (join)
           await db.query(
-            'INSERT INTO classlens.course_memberships(user_id,course_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
+            'INSERT INTO chalkwise.course_memberships(user_id,course_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
             [user, id],
           );
         else
           await db.query(
-            'DELETE FROM classlens.course_memberships WHERE user_id=$1 AND course_id=$2',
+            'DELETE FROM chalkwise.course_memberships WHERE user_id=$1 AND course_id=$2',
             [user, id],
           );
       }),
@@ -89,18 +89,18 @@ export function repository(database: Database, storage: Storage) {
       run(user, (db) =>
         many(
           db,
-          `SELECT ${lectureColumns} FROM classlens.lectures WHERE course_id=$1 AND owner_id=$2 ORDER BY created_at DESC,id LIMIT 500`,
+          `SELECT ${lectureColumns} FROM chalkwise.lectures WHERE course_id=$1 AND owner_id=$2 ORDER BY created_at DESC,id LIMIT 500`,
           [courseId, user],
         ),
       ),
     lecture: (user: string, id: string) =>
       run(user, (db) =>
-        one(db, `SELECT ${lectureColumns} FROM classlens.lectures WHERE id=$1`, [id]),
+        one(db, `SELECT ${lectureColumns} FROM chalkwise.lectures WHERE id=$1`, [id]),
       ),
     createLecture: (user: string, id: string, input: z.infer<typeof lectureInput>) =>
       run(user, async (db) => {
         await db.query(
-          `INSERT INTO classlens.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions)
+          `INSERT INTO chalkwise.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions)
         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING`,
           [
             id,
@@ -117,7 +117,7 @@ export function repository(database: Database, storage: Storage) {
         const saved = found(
           await one(
             db,
-            `SELECT ${lectureColumns} FROM classlens.lectures WHERE id=$1 AND owner_id=$2`,
+            `SELECT ${lectureColumns} FROM chalkwise.lectures WHERE id=$1 AND owner_id=$2`,
             [id, user],
           ),
         );
@@ -137,7 +137,7 @@ export function repository(database: Database, storage: Storage) {
       }),
     sharing: (user: string, id: string) =>
       run(user, (db) =>
-        one(db, 'SELECT shared,owner_id=$2 AS "canEdit" FROM classlens.lectures WHERE id=$1', [
+        one(db, 'SELECT shared,owner_id=$2 AS "canEdit" FROM chalkwise.lectures WHERE id=$1', [
           id,
           user,
         ]),
@@ -147,7 +147,7 @@ export function repository(database: Database, storage: Storage) {
         found(
           await one(
             db,
-            'UPDATE classlens.lectures SET shared=$3 WHERE id=$1 AND owner_id=$2 RETURNING shared,true AS "canEdit"',
+            'UPDATE chalkwise.lectures SET shared=$3 WHERE id=$1 AND owner_id=$2 RETURNING shared,true AS "canEdit"',
             [id, user, shared],
           ),
         ),
@@ -156,7 +156,7 @@ export function repository(database: Database, storage: Storage) {
       run(user, (db) =>
         many(
           db,
-          `SELECT ${lectureColumns},owner_id AS "ownerId" FROM classlens.lectures WHERE owner_id=ANY($1::uuid[]) AND owner_id<>$2 ORDER BY created_at DESC,id LIMIT 100`,
+          `SELECT ${lectureColumns},owner_id AS "ownerId" FROM chalkwise.lectures WHERE owner_id=ANY($1::uuid[]) AND owner_id<>$2 ORDER BY created_at DESC,id LIMIT 100`,
           [owners, user],
         ),
       ),
@@ -165,7 +165,7 @@ export function repository(database: Database, storage: Storage) {
         many(
           db,
           `SELECT f.id,f.status,f.addressee_id=$1 AS incoming,p.id AS "profileId",p.name,p.year,p.major
-       FROM classlens.friendships f JOIN classlens.profiles p ON p.id=CASE WHEN f.requester_id=$1 THEN f.addressee_id ELSE f.requester_id END ORDER BY p.name,p.id`,
+       FROM chalkwise.friendships f JOIN chalkwise.profiles p ON p.id=CASE WHEN f.requester_id=$1 THEN f.addressee_id ELSE f.requester_id END ORDER BY p.name,p.id`,
           [user],
         ),
       ),
@@ -174,7 +174,7 @@ export function repository(database: Database, storage: Storage) {
         if (user === addressee)
           throw new ApiError(400, 'INVALID_REQUEST', 'You cannot add yourself.');
         await db.query(
-          'INSERT INTO classlens.friendships(requester_id,addressee_id) VALUES($1,$2)',
+          'INSERT INTO chalkwise.friendships(requester_id,addressee_id) VALUES($1,$2)',
           [user, addressee],
         );
       }),
@@ -183,7 +183,7 @@ export function repository(database: Database, storage: Storage) {
         found(
           await one(
             db,
-            "UPDATE classlens.friendships SET status='accepted' WHERE id=$1 AND addressee_id=$2 AND status='pending' RETURNING id",
+            "UPDATE chalkwise.friendships SET status='accepted' WHERE id=$1 AND addressee_id=$2 AND status='pending' RETURNING id",
             [id, user],
           ),
         ),
@@ -192,7 +192,7 @@ export function repository(database: Database, storage: Storage) {
       run(user, (db) =>
         many(
           db,
-          `SELECT ${materialColumns} FROM classlens.materials WHERE lecture_id=$1 AND status='ready' ORDER BY created_at,id`,
+          `SELECT ${materialColumns} FROM chalkwise.materials WHERE lecture_id=$1 AND status='ready' ORDER BY created_at,id`,
           [lectureId],
         ),
       ),
@@ -203,12 +203,12 @@ export function repository(database: Database, storage: Storage) {
       // Persist the intent first. A retry can finish the same intent after any lost response.
       const row = await run(user, async (db) => {
         await db.query(
-          `INSERT INTO classlens.materials(id,owner_id,storage_path,mime_type,byte_size,sha256)
+          `INSERT INTO chalkwise.materials(id,owner_id,storage_path,mime_type,byte_size,sha256)
           VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO NOTHING`,
           [input.id, user, path, input.mimeType, bytes.length, digest],
         );
         return found(
-          await one(db, 'SELECT * FROM classlens.materials WHERE id=$1 AND owner_id=$2', [
+          await one(db, 'SELECT * FROM chalkwise.materials WHERE id=$1 AND owner_id=$2', [
             input.id,
             user,
           ]),
@@ -223,13 +223,13 @@ export function repository(database: Database, storage: Storage) {
       await storage.put(path, { bytes, mimeType: input.mimeType });
       return run(user, async (db) => {
         await db.query(
-          "UPDATE classlens.materials SET status='ready' WHERE id=$1 AND owner_id=$2 AND status='pending'",
+          "UPDATE chalkwise.materials SET status='ready' WHERE id=$1 AND owner_id=$2 AND status='pending'",
           [input.id, user],
         );
         return found(
           await one(
             db,
-            `SELECT ${materialColumns} FROM classlens.materials WHERE id=$1 AND status='ready'`,
+            `SELECT ${materialColumns} FROM chalkwise.materials WHERE id=$1 AND status='ready'`,
             [input.id],
           ),
         );
@@ -238,14 +238,14 @@ export function repository(database: Database, storage: Storage) {
     attach: (user: string, id: string, lectureId: string) =>
       run(user, async (db) => {
         found(
-          await one(db, 'SELECT id FROM classlens.lectures WHERE id=$1 AND owner_id=$2', [
+          await one(db, 'SELECT id FROM chalkwise.lectures WHERE id=$1 AND owner_id=$2', [
             lectureId,
             user,
           ]),
         );
         const row = await one(
           db,
-          `UPDATE classlens.materials SET lecture_id=$2 WHERE id=$1 AND owner_id=$3 AND lecture_id IS NULL AND status='ready' RETURNING ${materialColumns}`,
+          `UPDATE chalkwise.materials SET lecture_id=$2 WHERE id=$1 AND owner_id=$3 AND lecture_id IS NULL AND status='ready' RETURNING ${materialColumns}`,
           [id, lectureId, user],
         );
         if (!row)
@@ -259,7 +259,7 @@ export function repository(database: Database, storage: Storage) {
     materialUrl: async (user: string, id: string) => {
       const row = found(
         await run(user, (db) =>
-          one(db, "SELECT storage_path FROM classlens.materials WHERE id=$1 AND status='ready'", [
+          one(db, "SELECT storage_path FROM chalkwise.materials WHERE id=$1 AND status='ready'", [
             id,
           ]),
         ),
@@ -271,11 +271,11 @@ export function repository(database: Database, storage: Storage) {
         const lecture = material
           ? null
           : found(
-              await one(db, `SELECT ${lectureColumns} FROM classlens.lectures WHERE id=$1`, [id]),
+              await one(db, `SELECT ${lectureColumns} FROM chalkwise.lectures WHERE id=$1`, [id]),
             );
         const rows = await many(
           db,
-          `SELECT storage_path,byte_size FROM classlens.materials WHERE ${material ? 'id' : 'lecture_id'}=$1 AND status='ready' ORDER BY created_at,id LIMIT 7`,
+          `SELECT storage_path,byte_size FROM chalkwise.materials WHERE ${material ? 'id' : 'lecture_id'}=$1 AND status='ready' ORDER BY created_at,id LIMIT 7`,
           [id],
         );
         if (material && !rows.length) found(null);
@@ -286,25 +286,45 @@ export function repository(database: Database, storage: Storage) {
       const photos = await Promise.all(data.rows.map((row) => storage.read(row.storage_path)));
       return { lecture: data.lecture, photos };
     },
+    /**
+     * The staged photos of one capture session, returned in the order the student
+     * captured them so a whiteboard sequence stays in sequence. Ownership is checked
+     * here as well as by RLS: analysis runs only on your own unattached photos.
+     */
+    capturePhotos: async (user: string, ids: string[]) => {
+      const rows = await run(user, (db) =>
+        many(
+          db,
+          `SELECT storage_path,byte_size FROM chalkwise.materials
+           WHERE id=ANY($1::uuid[]) AND owner_id=$2 AND status='ready'
+           ORDER BY array_position($1::uuid[],id)`,
+          [ids, user],
+        ),
+      );
+      if (rows.length !== ids.length) found(null);
+      if (rows.length > 6 || rows.reduce((total, r) => total + r.byte_size, 0) > 10 * 1024 * 1024)
+        throw new ApiError(422, 'CONTEXT_TOO_LARGE', 'Use at most six photos totaling 10 MiB.');
+      return Promise.all(rows.map((row) => storage.read(row.storage_path)));
+    },
     reviews: (user: string) =>
       run(user, (db) =>
         many(
           db,
-          `SELECT ${reviewColumns} FROM classlens.reviews WHERE user_id=$1 ORDER BY next_review_at LIMIT 500`,
+          `SELECT ${reviewColumns} FROM chalkwise.reviews WHERE user_id=$1 ORDER BY next_review_at LIMIT 500`,
           [user],
         ),
       ),
     review: (user: string, id: string, confidence: ReviewConfidence) =>
       run(user, async (db) => {
         found(
-          await one(db, 'SELECT id FROM classlens.lectures WHERE id=$1 AND owner_id=$2', [
+          await one(db, 'SELECT id FROM chalkwise.lectures WHERE id=$1 AND owner_id=$2', [
             id,
             user,
           ]),
         );
         return one(
           db,
-          `INSERT INTO classlens.reviews(user_id,lecture_id,confidence,next_review_at) VALUES($1,$2,$3,$4)
+          `INSERT INTO chalkwise.reviews(user_id,lecture_id,confidence,next_review_at) VALUES($1,$2,$3,$4)
         ON CONFLICT(user_id,lecture_id) DO UPDATE SET confidence=EXCLUDED.confidence,reviewed_at=now(),next_review_at=EXCLUDED.next_review_at RETURNING ${reviewColumns}`,
           [user, id, confidence, nextReviewAt(confidence)],
         );
@@ -313,14 +333,14 @@ export function repository(database: Database, storage: Storage) {
       const targetId = stableUuid(`copy:${user}:${sourceId}`);
       const source = await run(user, async (db) => ({
         lecture: found(
-          await one(db, 'SELECT * FROM classlens.lectures WHERE id=$1 AND owner_id<>$2', [
+          await one(db, 'SELECT * FROM chalkwise.lectures WHERE id=$1 AND owner_id<>$2', [
             sourceId,
             user,
           ]),
         ),
         photos: await many(
           db,
-          "SELECT * FROM classlens.materials WHERE lecture_id=$1 AND status='ready' ORDER BY created_at,id LIMIT 7",
+          "SELECT * FROM chalkwise.materials WHERE lecture_id=$1 AND status='ready' ORDER BY created_at,id LIMIT 7",
           [sourceId],
         ),
       }));
@@ -334,13 +354,13 @@ export function repository(database: Database, storage: Storage) {
       return run(user, async (db) => {
         // Recheck sharing inside the final transaction; revocation during copying prevents publication.
         const l = found(
-          await one(db, 'SELECT * FROM classlens.lectures WHERE id=$1 AND owner_id<>$2', [
+          await one(db, 'SELECT * FROM chalkwise.lectures WHERE id=$1 AND owner_id<>$2', [
             sourceId,
             user,
           ]),
         );
         await db.query(
-          `INSERT INTO classlens.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions,source_lecture_id)
+          `INSERT INTO chalkwise.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions,source_lecture_id)
           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT DO NOTHING`,
           [
             targetId,
@@ -358,7 +378,7 @@ export function repository(database: Database, storage: Storage) {
         for (const p of source.photos) {
           const id = stableUuid(`${targetId}:${p.id}`);
           await db.query(
-            `INSERT INTO classlens.materials(id,owner_id,lecture_id,storage_path,mime_type,byte_size,sha256,status)
+            `INSERT INTO chalkwise.materials(id,owner_id,lecture_id,storage_path,mime_type,byte_size,sha256,status)
             VALUES($1,$2,$3,$4,$5,$6,$7,'ready') ON CONFLICT DO NOTHING`,
             [id, user, targetId, `${user}/${id}/original`, p.mime_type, p.byte_size, p.sha256],
           );
@@ -366,7 +386,7 @@ export function repository(database: Database, storage: Storage) {
         return found(
           await one(
             db,
-            `SELECT ${lectureColumns} FROM classlens.lectures WHERE id=$1 AND owner_id=$2`,
+            `SELECT ${lectureColumns} FROM chalkwise.lectures WHERE id=$1 AND owner_id=$2`,
             [targetId, user],
           ),
         );

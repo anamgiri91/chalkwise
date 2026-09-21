@@ -6,8 +6,10 @@ import { z, ZodError } from 'zod';
 import type { Repository } from './repository.ts';
 import type { VerifyToken } from './auth.ts';
 import type { Ai } from './ai.ts';
+import { analyzeSession } from './analysis.ts';
 import { ApiError } from './errors.ts';
 import {
+  analyzeInput,
   courseInput,
   id,
   lectureInput,
@@ -202,9 +204,22 @@ export async function buildApp(deps: {
         },
       };
       api.post('/ai/analyze', aiLimit, async (r) => {
-        const { materialId } = z.object({ materialId: z.uuid() }).strict().parse(r.body);
-        const { photos } = await repo.context(r.userId, materialId, true);
-        return deps.ai.generate('analysis', {}, photos);
+        const { materialIds } = analyzeInput.parse(r.body);
+        const photos = await repo.capturePhotos(r.userId, materialIds);
+        const result = await analyzeSession(deps.ai, photos);
+        if (result.removedClaims || result.unreadablePhotos.length) {
+          // Counts only. The removed text is model output about a student's own
+          // material and does not belong in a server log.
+          r.log.warn(
+            {
+              photos: materialIds.length,
+              unreadable: result.unreadablePhotos.length,
+              removedClaims: result.removedClaims,
+            },
+            'Analysis dropped unsupported claims',
+          );
+        }
+        return result.analysis;
       });
       api.post('/ai/ask', aiLimit, async (r) => {
         const { lectureId, question } = z

@@ -11,6 +11,8 @@ const paths = [
   'src/features/study',
   'src/features/courses/matchCourse.ts',
   'src/lib/api.ts',
+  'src/lib/captureExtraction.ts',
+  'src/lib/grounding.ts',
   'src/lib/cognito.ts',
   'src/lib/http.ts',
   'src/lib/sessionManager.ts',

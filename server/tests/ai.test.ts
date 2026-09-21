@@ -28,14 +28,14 @@ test('missing configuration and excessive context make no provider requests', as
     calls++;
     return response({});
   };
-  await assert.rejects(geminiAi(undefined, 'model', transport).generate('analysis', {}, []), {
+  await assert.rejects(geminiAi(undefined, 'model', transport).generate('extract', {}, []), {
     statusCode: 503,
   });
   const photos = Array.from({ length: 7 }, () => ({
     bytes: new Uint8Array([1]),
     mimeType: 'image/png',
   }));
-  await assert.rejects(geminiAi('key', 'model', transport).generate('analysis', {}, photos), {
+  await assert.rejects(geminiAi('key', 'model', transport).generate('extract', {}, photos), {
     code: 'CONTEXT_TOO_LARGE',
   });
   assert.equal(calls, 0);

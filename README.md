@@ -1,21 +1,21 @@
-# ClassLens
+# Chalkwise
 
 **Capture a lecture. Check the source. Remember what matters.**
 
-ClassLens is a study workspace for a pilot of 10–20 college students. It connects lecture photos, organized notes, source-based questions, quizzes, and a personal review queue. The redesigned home shows the student's courses, recent notes, and next review. Notebooks keep originals separate from AI output and let students recall a topic before revealing the notes.
+Chalkwise is a study workspace for a pilot of 10–20 college students. It connects lecture photos, organized notes, source-based questions, quizzes, and a personal review queue. The redesigned home shows the student's courses, recent notes, and next review. Notebooks keep originals separate from AI output and let students recall a topic before revealing the notes.
 
 The new backend uses PostgreSQL, Amazon Cognito, and private Amazon S3. It is ready for deployment preparation on AWS; no cloud resources have been provisioned and no existing Supabase data has been migrated. The legacy adapter stays available until live acceptance and cutover are complete.
 
 ## Implemented experience
 
 - Email confirmation, sign-in, password reset, profile editing, course creation and enrollment.
-- Camera capture with blur/exposure checks and a single-photo processing path to saved notes.
+- Camera capture with blur/exposure checks, and capture sessions of up to six photos uploaded and analyzed together into one set of notes.
 - Course and notebook search, original-photo access, AI questions and quizzes in live modes.
 - Active recall with explicit confidence choices: review again in four hours, one day, or three days. These are review intervals, not mastery estimates.
 - Friend requests and opt-in notebook sharing in API mode. Only accepted friends enrolled in the course can read a shared notebook. Recipients can save an independent copy.
 - Responsive mobile/web navigation, light/dark themes, loading/error states, and a populated local demo.
 
-Capture can retain up to six photos locally; processing all six together, durable resume after app termination, background processing, notifications, automatic attendance inference, and hardware integration remain future work. Demo uploads and AI are intentionally unavailable; demo review and browsing work locally.
+Durable resume after app termination, background processing, notifications, automatic attendance inference, and hardware integration remain future work. Demo uploads and AI are intentionally unavailable; demo review and browsing work locally.
 
 ## Architecture
 
@@ -81,12 +81,12 @@ npm run build:web      # Expo production web export
 git diff --check
 ```
 
-The suite covers signed-token rejection, API validation and access gates, safe errors, upload recovery, session races, review scheduling, AI result validation, capture quality, and ambiguous course matching. Legacy Edge Function harnesses remain part of the ordinary test command.
+The suite covers signed-token rejection, API validation and access gates, safe errors, upload recovery, session races, review scheduling, AI result validation, multi-photo session analysis, transcript support checking, capture quality, and ambiguous course matching. Legacy Edge Function harnesses remain part of the ordinary test command.
 
 PostgreSQL isolation tests run separately against a prepared local disposable database using the restricted runtime login:
 
 ```sh
-TEST_DATABASE_URL=postgres://runtime:password@localhost:5432/classlens_test npm run test:db --prefix server
+TEST_DATABASE_URL=postgres://runtime:password@localhost:5432/chalkwise_test npm run test:db --prefix server
 ```
 
 Without that explicit URL the database test is skipped. Ordinary tests never apply migrations or use production credentials. GitHub Actions is configured to run the checks, web export, container build, and isolation test against a disposable PostgreSQL service. Local passing tests do not establish live AWS or physical-device behavior; see the [verification record](docs/architecture/VERIFICATION.md) for results and outstanding checks.
@@ -104,4 +104,4 @@ Without that explicit URL the database test is skipped. Ordinary tests never app
 | `tests`, `server/tests` | App/domain, API, provider, and opt-in database tests |
 | `supabase` | Preserved legacy functions and schema history |
 
-The [implementation plan](docs/CLASSLENS_IMPLEMENTATION_PLAN.md) points to the [full-stack plan and checkpoint history](docs/architecture/FULL_STACK_PLAN.md). [SHARED_CONTRACTS.md](SHARED_CONTRACTS.md) defines the service, identity, and sharing boundaries.
+The [implementation plan](docs/CHALKWISE_IMPLEMENTATION_PLAN.md) points to the [full-stack plan and checkpoint history](docs/architecture/FULL_STACK_PLAN.md). [SHARED_CONTRACTS.md](SHARED_CONTRACTS.md) defines the service, identity, and sharing boundaries.

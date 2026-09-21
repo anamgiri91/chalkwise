@@ -15,7 +15,7 @@ import { Brand, Fonts } from '@/constants/theme';
 
 import { parseCaptureSession } from '@/features/capture/captureSession';
 import { matchCourse } from '@/features/courses/matchCourse';
-import { analyzeMaterial } from '@/services/ai';
+import { analyzeMaterials } from '@/services/ai';
 import { createCourse } from '@/services/courses';
 import { enrollInCourse, getMyEnrolledCourses } from '@/services/enrollment';
 import { createLecture } from '@/services/lectures';
@@ -43,7 +43,7 @@ const stageCopy: Record<Stage, { title: string; body: string }> = {
   },
   done: {
     title: 'Your notebook is ready',
-    body: 'Opening the lecture ClassLens just organized.',
+    body: 'Opening the lecture Chalkwise just organized.',
   },
 };
 
@@ -104,16 +104,29 @@ export default function ProcessingScreen() {
 
   const count = assets.length;
   const hasMaterial = count > 0 || Boolean(params.mode);
-  const multiPhotoPending = count > 1;
   const invalidCaptureSession = Boolean(params.captureSession && sessionResult.error);
 
-  // The analysis contract takes one photo per material, so the pipeline runs on
-  // the first page. Extra pages are previewed but not sent.
-  const sessionPhoto = sessionResult.session?.photos[0];
-  const source = sessionPhoto?.uri ?? assets[0];
-  const mimeType = sessionPhoto?.mimeType ?? (Array.isArray(params.mimeType) ? params.mimeType[0] : params.mimeType);
-  const fileName = sessionPhoto?.fileName ?? (Array.isArray(params.fileName) ? params.fileName[0] : params.fileName);
+  const paramMimeType = Array.isArray(params.mimeType) ? params.mimeType[0] : params.mimeType;
+  const paramFileName = Array.isArray(params.fileName) ? params.fileName[0] : params.fileName;
   const courseId = Array.isArray(params.courseId) ? params.courseId[0] : params.courseId;
+
+  // Every page of the session is uploaded and analyzed together, so the notebook covers
+  // the whole board sequence instead of only its first page.
+  const sources = useMemo(
+    () =>
+      sessionResult.session
+        ? sessionResult.session.photos.map((photo) => ({
+            uri: photo.uri,
+            mimeType: photo.mimeType as string,
+            fileName: photo.fileName,
+          }))
+        : assets.map((uri, index) => ({
+            uri,
+            mimeType: paramMimeType ?? 'image/jpeg',
+            fileName: paramFileName ?? `photo-${index + 1}.jpg`,
+          })),
+    [assets, paramFileName, paramMimeType, sessionResult.session],
+  );
 
   const [stage, setStage] = useState<Stage>('uploading');
   const [error, setError] = useState('');
@@ -121,10 +134,11 @@ export default function ProcessingScreen() {
   const [attempt, setAttempt] = useState(0);
   const [form, setForm] = useState({ code: '', name: '', professor: '' });
   const [creating, setCreating] = useState(false);
+  const [uploaded, setUploaded] = useState(0);
 
   // Completed stages are retained so a retry never repeats paid or partial work:
   // no second upload, no second analysis, and no duplicate lecture.
-  const material = useRef<Material | null>(null);
+  const materials = useRef<Material[]>([]);
   const analysis = useRef<LectureAnalysis | null>(null);
   const savedLectureId = useRef<string | null>(null);
   const course = useRef<Course | null>(null);
@@ -144,25 +158,30 @@ export default function ProcessingScreen() {
   useEffect(() => {
     async function run() {
       if (inFlight.current) return;
-      if (multiPhotoPending || invalidCaptureSession) return;
-      if (!source) return;
+      if (invalidCaptureSession) return;
+      if (!sources.length) return;
       inFlight.current = true;
       setError('');
       setChoices(null);
 
       try {
         setStage('uploading');
-        if (!material.current) {
-          material.current = await uploadMaterial({
-            uri: source,
+        // Uploads are sequential and recorded per photo, so a retry resumes at the
+        // first photo that has not reached storage rather than starting over.
+        for (let index = 0; index < sources.length; index += 1) {
+          setUploaded(index);
+          if (materials.current[index]) continue;
+          materials.current[index] = await uploadMaterial({
+            uri: sources[index].uri,
             type: 'photo',
-            fileName: fileName ?? 'photo.jpg',
-            mimeType: mimeType ?? 'image/jpeg',
+            fileName: sources[index].fileName,
+            mimeType: sources[index].mimeType,
           });
         }
+        setUploaded(sources.length);
 
         setStage('analyzing');
-        if (!analysis.current) analysis.current = await analyzeMaterial(material.current);
+        if (!analysis.current) analysis.current = await analyzeMaterials(materials.current);
 
         // suggestedCourse is a free-text label, never a course ID, and never creates a course.
         setStage('organizing');
@@ -207,16 +226,21 @@ export default function ProcessingScreen() {
         }
 
         // Attach only after the lecture exists, and only while still staged.
-        if (material.current.lectureId === null) {
+        for (let index = 0; index < materials.current.length; index += 1) {
+          const photo = materials.current[index];
+          if (photo.lectureId !== null) continue;
           try {
-            material.current = await attachMaterialToLecture(material.current.id, savedLectureId.current);
+            materials.current[index] = await attachMaterialToLecture(
+              photo.id,
+              savedLectureId.current,
+            );
           } catch (error) {
             // A lost response may hide a successful attachment. Never accept another lecture.
             const attached = (await getMaterials(savedLectureId.current)).find(
-              (entry) => entry.id === material.current?.id && entry.lectureId === savedLectureId.current
+              (entry) => entry.id === photo.id && entry.lectureId === savedLectureId.current,
             );
             if (!attached) throw error;
-            material.current = attached;
+            materials.current[index] = attached;
           }
         }
 
@@ -233,7 +257,7 @@ export default function ProcessingScreen() {
     }
 
     void run();
-  }, [attempt, source, mimeType, fileName, courseId, multiPhotoPending, invalidCaptureSession]);
+  }, [attempt, sources, courseId, invalidCaptureSession]);
 
   function retry() {
     router.replace('/capture');
@@ -266,7 +290,13 @@ export default function ProcessingScreen() {
   }
 
   const picking = choices !== null;
-  const status = stageCopy[stage];
+  const status =
+    stage === 'uploading' && count > 1
+      ? {
+          title: stageCopy.uploading.title,
+          body: `Putting photo ${Math.min(uploaded + 1, count)} of ${count} somewhere safe.`,
+        }
+      : stageCopy[stage];
   const understanding = !error && !picking && (stage === 'uploading' || stage === 'analyzing' || stage === 'organizing');
   const building = !error && !picking && (stage === 'saving' || stage === 'done');
 
@@ -275,7 +305,7 @@ export default function ProcessingScreen() {
       <View style={styles.page}>
         <View style={styles.header}>
           <ThemedText type="smallBold" style={styles.eyebrow}>
-            CLASSLENS INTELLIGENCE
+            CHALKWISE INTELLIGENCE
           </ThemedText>
 
           <ThemedText type="title" style={styles.title}>
@@ -283,8 +313,6 @@ export default function ProcessingScreen() {
               ? 'This capture session could not be opened.'
               : !hasMaterial
                 ? 'No lecture material found.'
-                : multiPhotoPending
-                  ? `${count} photos are safely handed off.`
               : error
                 ? 'This didn’t come together.'
                 : picking
@@ -300,13 +328,11 @@ export default function ProcessingScreen() {
               ? sessionResult.error
               : !hasMaterial
                 ? 'Choose a photo, slide, recording, or file and try again.'
-                : multiPhotoPending
-                  ? 'Every local photo reference reached Processing. Multi-photo upload and analysis arrive in Milestone 3, so none of these photos has been uploaded or analyzed yet.'
               : error
                 ? 'Your material is safe. Nothing was lost, and you can pick up where this stopped.'
                 : picking
-                  ? 'ClassLens organized your material. Tell it which course this belongs to and the notebook will be saved.'
-                  : 'ClassLens is turning your actual class material into a structured notebook — never a generic sample.'}
+                  ? 'Chalkwise organized your material. Tell it which course this belongs to and the notebook will be saved.'
+                  : 'Chalkwise is turning your actual class material into a structured notebook — never a generic sample.'}
           </ThemedText>
         </View>
 
@@ -367,9 +393,9 @@ export default function ProcessingScreen() {
         {hasMaterial && !picking ? (
           <View style={styles.analysisCard}>
             <View style={styles.iconShell}>
-              {error || multiPhotoPending ? (
+              {error ? (
                 <ThemedText allowFontScaling={false} style={styles.alert}>
-                  {multiPhotoPending ? '✓' : '!'}
+                  !
                 </ThemedText>
               ) : (
                 <ActivityIndicator
@@ -381,7 +407,7 @@ export default function ProcessingScreen() {
 
             <View style={styles.analysisCopy}>
               <ThemedText type="subtitle">
-                {multiPhotoPending ? 'Session preserved' : error ? 'Analysis stopped' : status.title}
+                {error ? 'Analysis stopped' : status.title}
               </ThemedText>
 
               <ThemedText
@@ -389,9 +415,7 @@ export default function ProcessingScreen() {
                 style={styles.body}
                 accessibilityLiveRegion="polite"
               >
-                {multiPhotoPending
-                  ? 'Return to the camera to review or change this session. Processing will support the full set when the Milestone 3 pipeline is implemented.'
-                  : error || status.body}
+                {error || status.body}
               </ThemedText>
             </View>
           </View>
@@ -508,9 +532,9 @@ export default function ProcessingScreen() {
           </View>
         ) : null}
 
-        {!multiPhotoPending && !invalidCaptureSession ? <View style={styles.promiseCard}>
+        {!invalidCaptureSession ? <View style={styles.promiseCard}>
           <ThemedText type="smallBold" style={styles.promiseLabel}>
-            CLASSLENS PROMISE
+            CHALKWISE PROMISE
           </ThemedText>
 
           <ThemedText style={styles.promiseTitle}>
@@ -521,13 +545,13 @@ export default function ProcessingScreen() {
             themeColor="textSecondary"
             style={styles.body}
           >
-            ClassLens will not substitute Binary Search Trees,
+            Chalkwise will not substitute Binary Search Trees,
             sample notes, or unrelated academic content when analysis
             is unavailable.
           </ThemedText>
         </View> : null}
 
-        {!multiPhotoPending && !invalidCaptureSession ? <View style={styles.steps}>
+        {!invalidCaptureSession ? <View style={styles.steps}>
           <Step
             number="01"
             title="Capture"
@@ -549,16 +573,6 @@ export default function ProcessingScreen() {
         </View> : null}
 
         <View style={styles.actions}>
-          {multiPhotoPending ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.back()}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
-            >
-              <ThemedText style={styles.primaryButtonText}>Review captured photos</ThemedText>
-            </Pressable>
-          ) : null}
-
           {error ? (
             <Pressable
               accessibilityRole="button"
@@ -574,7 +588,7 @@ export default function ProcessingScreen() {
             </Pressable>
           ) : null}
 
-          {!multiPhotoPending ? <Pressable
+          <Pressable
             accessibilityRole="button"
             onPress={retry}
             style={({ pressed }) => [
@@ -587,9 +601,9 @@ export default function ProcessingScreen() {
                 ? 'Choose different material'
                 : 'Return to capture'}
             </ThemedText>
-          </Pressable> : null}
+          </Pressable>
 
-          {!multiPhotoPending ? <Pressable
+          <Pressable
             accessibilityRole="button"
             onPress={() => router.back()}
             style={({ pressed }) => [
@@ -600,7 +614,7 @@ export default function ProcessingScreen() {
             <ThemedText style={styles.secondaryButtonText}>
               Go back
             </ThemedText>
-          </Pressable> : null}
+          </Pressable>
         </View>
 
         <ThemedText

@@ -1,4 +1,4 @@
-# ClassLens Shared Contracts
+# Chalkwise Shared Contracts
 
 ## AWS backend transition (September 2026)
 
@@ -26,6 +26,17 @@ adapter. See `docs/architecture/FULL_STACK_PLAN.md` for scope and verification g
 - The API uses a separate non-owner database login and transaction-local verified
   user IDs for RLS. New schema scripts are reviewable under `server/migrations/`;
   neither startup nor ordinary tests apply them.
+- Photo analysis takes a capture session. `analyzeMaterials(materials)` sends one to six
+  owned, staged photos to POST /v1/ai/analyze as `materialIds`; the legacy single-photo
+  `materialId` body is still accepted. `analyzeMaterial(material)` delegates to it and is
+  unchanged for callers. The legacy Supabase adapter stays single-photo and rejects a
+  larger session explicitly.
+- The server transcribes each photo separately, then organizes those transcripts without
+  the photos, so every organized claim must come from text Chalkwise already holds.
+  Assignments and exam mentions that no transcript supports are removed before the result
+  is returned; the result shape is the unchanged eight-field LectureAnalysis. Photos that
+  cannot be read are skipped and the rest of the session still saves. If no photo can be
+  read, analysis fails rather than returning empty notes.
 - Mock mode opens a populated demo workspace. Mock profile/enrollment changes are
   in-memory only. Mock capture uploads and AI calls still reject, never fake success.
 
@@ -328,7 +339,9 @@ Malformed, blocked, or incomplete provider output rejects; no mock fallback exis
 Quiz generation is implemented on demand; lecture creation and attachment are separate service calls.
 
 The function uses gemini-3.1-flash-lite with GEMINI_API_KEY held only in Supabase Edge
-Function secrets. CLASSLENS_DEMO_PUBLISHABLE_KEY must match the mobile publishable
+Function secrets. CLASSLENS_DEMO_PUBLISHABLE_KEY keeps its original name on purpose:
+it is read from the deployed remote secret, so renaming it here breaks the legacy
+functions. It must match the mobile publishable
 key. verify_jwt is false and the handler validates the apikey header itself. This is
 shared public-key demo access, not user authentication or protection against quota
 consumption by other key holders. Set provider quotas before deploying. Database

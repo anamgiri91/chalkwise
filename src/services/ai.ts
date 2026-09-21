@@ -6,17 +6,38 @@ import { getDataMode } from '@/lib/dataMode';
 import { apiRequest } from '@/lib/api';
 import { parseLectureAnalysis } from '@/lib/lectureAnalysis';
 
-export async function analyzeMaterial(material: Material): Promise<LectureAnalysis> {
+/** Matches the server's per-session ceiling and the capture screen's limit. */
+export const MAX_ANALYZED_PHOTOS = 6;
+
+/**
+ * Analyze one capture session. Photos are sent together so the organized notes cover
+ * the whole board sequence rather than only its first page.
+ */
+export async function analyzeMaterials(materials: Material[]): Promise<LectureAnalysis> {
+  if (!materials.length) throw new Error('Capture at least one photo to analyze.');
+  if (materials.length > MAX_ANALYZED_PHOTOS) {
+    throw new Error(`Analyze up to ${MAX_ANALYZED_PHOTOS} photos at a time.`);
+  }
+  if (materials.some((material) => material.type !== 'photo')) {
+    throw new Error('Only photos can be analyzed.');
+  }
   if (getDataMode() === 'api')
     return parseLectureAnalysis(
-      await apiRequest('/ai/analyze', { method: 'POST', body: { materialId: material.id } }),
+      await apiRequest('/ai/analyze', {
+        method: 'POST',
+        body: { materialIds: materials.map((material) => material.id) },
+      }),
     );
   if (getDataMode() !== 'supabase')
-    throw new Error('Analysis requires EXPO_PUBLIC_DATA_MODE=supabase.');
-  if (material.type !== 'photo') throw new Error('Only photos can be analyzed.');
+    throw new Error('Analysis requires EXPO_PUBLIC_DATA_MODE=api or supabase.');
+  if (materials.length > 1) {
+    throw new Error(
+      'The legacy backend analyzes one photo at a time. Use EXPO_PUBLIC_DATA_MODE=api for a full session.',
+    );
+  }
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase.functions.invoke('analyze-material', {
-    body: { materialId: material.id },
+    body: { materialId: materials[0].id },
   });
   if (error) {
     let message = 'Photo analysis failed. Check your connection and function deployment.';
@@ -31,6 +52,10 @@ export async function analyzeMaterial(material: Material): Promise<LectureAnalys
     throw new Error(message);
   }
   return parseLectureAnalysis(data);
+}
+
+export async function analyzeMaterial(material: Material): Promise<LectureAnalysis> {
+  return analyzeMaterials([material]);
 }
 
 export async function askLecture(lectureId: string, question: string): Promise<AskLectureResult> {

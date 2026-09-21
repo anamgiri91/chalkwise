@@ -36,3 +36,19 @@ export const uploadInput = z
   })
   .strict();
 export const reviewInput = z.object({ confidence: z.enum(['again', 'good', 'easy']) }).strict();
+
+/**
+ * One to six photos of a single capture session. The legacy single-photo body stays
+ * accepted so an app build in a student's hand keeps working after the server updates.
+ */
+export const analyzeInput = z
+  .union([
+    z.object({ materialIds: z.array(z.uuid()).min(1).max(6) }).strict(),
+    z
+      .object({ materialId: z.uuid() })
+      .strict()
+      .transform(({ materialId }) => ({ materialIds: [materialId] })),
+  ])
+  .refine(({ materialIds }) => new Set(materialIds).size === materialIds.length, {
+    message: 'List each photo once.',
+  });
