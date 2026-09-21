@@ -1,9 +1,11 @@
 /**
- * Chalkwise neutral workspace palette.
+ * Chalkwise workspace palette.
  *
- * Hierarchy comes from weight, size and spacing rather than colour: surfaces are
- * near-neutral greys, and the accent is a near-black (near-white in dark mode) so
- * that colour is reserved for state rather than decoration.
+ * One cool-grey ramp carries structure; colour is reserved for state and for
+ * interactive affordances, never for decoration. Every text pair meets WCAG AA
+ * (4.5:1) and every interactive boundary meets 3:1 against the surfaces it sits
+ * on; `tests/theme.test.ts` enforces this, so new values must be checked rather
+ * than chosen by eye.
  *
  * Token names are stable. Several screens still detect dark mode by comparing
  * `theme.background` with `Brand.paper`, so those two values must stay identical;
@@ -11,39 +13,11 @@
  */
 
 import { Platform } from 'react-native';
+import { Colors } from './palette';
 
-export const Colors = {
-  light: {
-    text: '#18181B',
-    background: '#FAFAFA',
-    backgroundElement: '#FFFFFF',
-    backgroundSelected: '#F1F1F3',
-    textSecondary: '#6B6B76',
-    textTertiary: '#9A9AA4',
-    border: '#E5E5E8',
-    borderStrong: '#D2D2D8',
-    accent: '#18181B',
-    accentText: '#FFFFFF',
-    focus: '#3B82F6',
-    danger: '#B42318',
-  },
-  dark: {
-    text: '#F4F4F5',
-    background: '#0B0B0D',
-    backgroundElement: '#161619',
-    backgroundSelected: '#232327',
-    textSecondary: '#A0A0AB',
-    textTertiary: '#71717A',
-    border: '#26262B',
-    borderStrong: '#35353C',
-    accent: '#F4F4F5',
-    accentText: '#18181B',
-    focus: '#60A5FA',
-    danger: '#F97066',
-  },
-} as const;
+export { Colors } from './palette';
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type { ThemeColor } from './palette';
 
 export const Fonts = Platform.select({
   ios: {

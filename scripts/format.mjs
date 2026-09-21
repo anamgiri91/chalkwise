@@ -33,6 +33,7 @@ const paths = [
   'src/components/ui/Screen.tsx',
   'src/components/ui/AppCard.tsx',
   'src/components/ui/AppButton.tsx',
+  'src/constants/palette.ts',
   'src/constants/theme.ts',
 ];
 const root = fileURLToPath(new URL('../', import.meta.url));

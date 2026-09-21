@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Brand } from '@/constants/theme';
+import { Brand, Colors } from '@/constants/theme';
 import {
   MAX_CAPTURE_PHOTOS,
   serializeCaptureSession,
@@ -444,13 +444,13 @@ const styles = StyleSheet.create({
   errorBody: { color: '#7D3333', fontSize: 13, lineHeight: 18 },
   retryButton: { minHeight: 38, alignItems: 'center', justifyContent: 'center', marginTop: 4, borderRadius: 12, backgroundColor: '#7D3333' },
   retryText: { color: '#FFFFFF', fontWeight: '700' },
-  warningCard: { marginHorizontal: 16, gap: 12, padding: 14, borderRadius: 16, backgroundColor: '#FFF4DF' },
+  warningCard: { marginHorizontal: 16, gap: 12, padding: 14, borderRadius: 16, backgroundColor: Colors.light.warningSurface },
   warningCopy: { gap: 3 },
-  warningTitle: { color: '#714313', fontSize: 15, fontWeight: '800' },
-  warningBody: { color: '#714313', fontSize: 13, lineHeight: 18 },
+  warningTitle: { color: Colors.light.warning, fontSize: 15, fontWeight: '800' },
+  warningBody: { color: Colors.light.text, fontSize: 13, lineHeight: 18 },
   warningActions: { flexDirection: 'row', gap: 10 },
-  warningButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#9B6428', borderRadius: 12 },
-  warningButtonText: { color: '#714313', fontWeight: '800' },
+  warningButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.light.warning, borderRadius: 12 },
+  warningButtonText: { color: Colors.light.text, fontWeight: '800' },
   keepButton: { borderColor: Brand.forest, backgroundColor: Brand.forest },
   keepButtonText: { color: '#FFFFFF', fontWeight: '800' },
   previewBackdrop: { flex: 1, justifyContent: 'space-between', padding: 18, backgroundColor: '#06100C' },
