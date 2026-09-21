@@ -35,11 +35,14 @@ export default function LoginScreen() {
     }
   }
 
-  const input = [styles.input, {
-    color: theme.text,
-    backgroundColor: theme.backgroundElement,
-    borderColor: theme.backgroundSelected,
-  }];
+  const input = [
+    styles.input,
+    {
+      color: theme.text,
+      backgroundColor: theme.backgroundElement,
+      borderColor: theme.backgroundSelected,
+    },
+  ];
 
   return (
     <Screen avoidKeyboard>
@@ -58,7 +61,9 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>EMAIL</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.label}>
+          EMAIL
+        </ThemedText>
         <TextInput
           value={email}
           onChangeText={setEmail}
@@ -79,7 +84,9 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>PASSWORD</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.label}>
+          PASSWORD
+        </ThemedText>
         <PasswordField
           ref={passwordRef}
           value={password}
@@ -99,12 +106,21 @@ export default function LoginScreen() {
       </View>
 
       {error ? (
-        <ThemedText accessibilityLiveRegion="polite" style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}>
+        <ThemedText
+          accessibilityLiveRegion="polite"
+          style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}
+        >
           {error}
         </ThemedText>
       ) : null}
 
-      {supportsEmailCode() ? <AppButton secondary title="Password or confirmation help" onPress={() => router.push('/account-help')} /> : null}
+      {supportsEmailCode() ? (
+        <AppButton
+          secondary
+          title="Password or confirmation help"
+          onPress={() => router.push('/account-help')}
+        />
+      ) : null}
 
       <Pressable
         accessibilityRole="button"
@@ -118,9 +134,13 @@ export default function LoginScreen() {
           (pressed || !ready || busy) && styles.dim,
         ]}
       >
-        {busy
-          ? <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
-          : <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>Sign in</ThemedText>}
+        {busy ? (
+          <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
+        ) : (
+          <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>
+            Sign in
+          </ThemedText>
+        )}
       </Pressable>
 
       <Pressable
@@ -149,8 +169,13 @@ const styles = StyleSheet.create({
   field: { gap: 7 },
   label: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
   input: {
-    minHeight: 54, borderRadius: 17, paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 16, lineHeight: 23, borderWidth: 1,
+    minHeight: 54,
+    borderRadius: 17,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    lineHeight: 23,
+    borderWidth: 1,
   },
   error: { fontSize: 14, lineHeight: 21 },
   action: { minHeight: 54, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },

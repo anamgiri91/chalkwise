@@ -15,18 +15,20 @@ export function matchCourse(suggestedCourse: string | null, courses: Course[]): 
   const target = normalize(suggestedCourse);
   if (!target) return null;
 
-  const exact = courses.find((course) =>
+  const exact = courses.filter((course) =>
     [course.id, course.code, course.name].some((field) => {
       const candidate = normalize(field);
       return candidate.length > 0 && candidate === target;
-    }));
-  if (exact) return exact;
+    }),
+  );
+  if (exact.length > 0) return exact.length === 1 ? exact[0] : null;
 
   // A label like "CS 3358 - Data Structures" still identifies one course.
   const contained = courses.filter((course) =>
     [course.id, course.code, course.name].some((field) => {
       const candidate = normalize(field);
       return candidate.length > 0 && target.includes(candidate);
-    }));
+    }),
+  );
   return contained.length === 1 ? contained[0] : null;
 }

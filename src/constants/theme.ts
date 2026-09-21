@@ -4,18 +4,18 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#192D27',
-    background: '#F6F5EF',
+    text: '#19243B',
+    background: '#F5F7FB',
     backgroundElement: '#FFFFFF',
-    backgroundSelected: '#E7EDE3',
-    textSecondary: '#647068',
+    backgroundSelected: '#E6EBF5',
+    textSecondary: '#59677E',
   },
   dark: {
-    text: '#EDF1E8',
-    background: '#111C18',
-    backgroundElement: '#1B2A23',
-    backgroundSelected: '#304236',
-    textSecondary: '#B1BDB2',
+    text: '#EFF3FF',
+    background: '#111827',
+    backgroundElement: '#1C273A',
+    backgroundSelected: '#2C3B54',
+    textSecondary: '#B6C2D8',
   },
 } as const;
 
@@ -57,6 +57,16 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 640;
+export const MaxContentWidth = 760;
 
-export const Brand = { forest: '#234E3C', lime: '#D5EF92', paper: '#F6F5EF', ink: '#192D27', muted: '#B9CEBF' } as const;
+// Existing semantic aliases remain so capture and legacy components stay compatible.
+export const Brand = {
+  forest: '#3157D5',
+  lime: '#DCE6FF',
+  paper: '#F5F7FB',
+  ink: '#19243B',
+  muted: '#BDCFF7',
+  accent: '#3157D5',
+  navy: '#17294D',
+  teal: '#247A70',
+} as const;

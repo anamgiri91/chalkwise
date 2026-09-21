@@ -7,18 +7,26 @@ import { apiRequest } from '@/lib/api';
 import { parseLectureAnalysis } from '@/lib/lectureAnalysis';
 
 export async function analyzeMaterial(material: Material): Promise<LectureAnalysis> {
-  if (getDataMode() === 'api') return parseLectureAnalysis(await apiRequest('/ai/analyze', { method: 'POST', body: { materialId: material.id } }));
-  if (getDataMode() !== 'supabase') throw new Error('Analysis requires EXPO_PUBLIC_DATA_MODE=supabase.');
+  if (getDataMode() === 'api')
+    return parseLectureAnalysis(
+      await apiRequest('/ai/analyze', { method: 'POST', body: { materialId: material.id } }),
+    );
+  if (getDataMode() !== 'supabase')
+    throw new Error('Analysis requires EXPO_PUBLIC_DATA_MODE=supabase.');
   if (material.type !== 'photo') throw new Error('Only photos can be analyzed.');
   const { supabase } = await import('@/lib/supabase');
-  const { data, error } = await supabase.functions.invoke('analyze-material', { body: { materialId: material.id } });
+  const { data, error } = await supabase.functions.invoke('analyze-material', {
+    body: { materialId: material.id },
+  });
   if (error) {
     let message = 'Photo analysis failed. Check your connection and function deployment.';
     if (error.context instanceof Response) {
       try {
         const body = await error.context.json();
         if (typeof body?.error?.message === 'string') message = body.error.message;
-      } catch { /* Keep a useful message for non-JSON gateway errors. */ }
+      } catch {
+        /* Keep a useful message for non-JSON gateway errors. */
+      }
     }
     throw new Error(message);
   }
@@ -27,8 +35,10 @@ export async function analyzeMaterial(material: Material): Promise<LectureAnalys
 
 export async function askLecture(lectureId: string, question: string): Promise<AskLectureResult> {
   const body = parseAskLectureInput(lectureId, question);
-  if (getDataMode() === 'api') return parseAskLectureResult(await apiRequest('/ai/ask', { method: 'POST', body }));
-  if (getDataMode() !== 'supabase') throw new Error('Lecture Q&A requires EXPO_PUBLIC_DATA_MODE=supabase.');
+  if (getDataMode() === 'api')
+    return parseAskLectureResult(await apiRequest('/ai/ask', { method: 'POST', body }));
+  if (getDataMode() !== 'supabase')
+    throw new Error('Lecture Q&A requires EXPO_PUBLIC_DATA_MODE=supabase.');
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase.functions.invoke('ask-lecture', { body });
   if (error) {
@@ -37,7 +47,9 @@ export async function askLecture(lectureId: string, question: string): Promise<A
       try {
         const result = await error.context.json();
         if (typeof result?.error?.message === 'string') message = result.error.message;
-      } catch { /* Preserve a useful message for gateway failures. */ }
+      } catch {
+        /* Preserve a useful message for gateway failures. */
+      }
     }
     throw new Error(message);
   }
@@ -46,8 +58,10 @@ export async function askLecture(lectureId: string, question: string): Promise<A
 
 export async function generateQuiz(lectureId: string): Promise<GenerateQuizResult> {
   const body = parseQuizInput(lectureId);
-  if (getDataMode() === 'api') return parseQuizResult(await apiRequest('/ai/quiz', { method: 'POST', body }));
-  if (getDataMode() !== 'supabase') throw new Error('Quiz generation requires EXPO_PUBLIC_DATA_MODE=supabase.');
+  if (getDataMode() === 'api')
+    return parseQuizResult(await apiRequest('/ai/quiz', { method: 'POST', body }));
+  if (getDataMode() !== 'supabase')
+    throw new Error('Quiz generation requires EXPO_PUBLIC_DATA_MODE=supabase.');
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase.functions.invoke('generate-quiz', { body });
   if (error) {
@@ -56,7 +70,9 @@ export async function generateQuiz(lectureId: string): Promise<GenerateQuizResul
       try {
         const result = await error.context.json();
         if (typeof result?.error?.message === 'string') message = result.error.message;
-      } catch { /* Keep a useful message for gateway failures. */ }
+      } catch {
+        /* Keep a useful message for gateway failures. */
+      }
     }
     throw new Error(message);
   }

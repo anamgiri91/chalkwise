@@ -10,7 +10,10 @@ const courses = mockCourses.map((course) => ({ ...course }));
 
 /** Course IDs stay human-readable: "CHEM 1301" becomes "chem-1301". */
 function slugify(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export async function getCourses(): Promise<Course[]> {

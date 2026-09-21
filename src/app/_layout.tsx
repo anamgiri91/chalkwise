@@ -26,7 +26,13 @@ const authRoutes = ['login', 'signup', 'account-help'];
 function useAuthGate() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
-  const [state, setState] = useState<{ ready: boolean; userId: string | null; profile: boolean; enrollment: boolean; error: string | null }>({ ready: false, userId: null, profile: false, enrollment: false, error: null });
+  const [state, setState] = useState<{
+    ready: boolean;
+    userId: string | null;
+    profile: boolean;
+    enrollment: boolean;
+    error: string | null;
+  }>({ ready: false, userId: null, profile: false, enrollment: false, error: null });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -37,35 +43,71 @@ function useAuthGate() {
       try {
         const profile = id ? await getMyProfile() : null;
         const enrollment = profile ? await hasEnrolledCourses() : false;
-        if (active && current === revision) setState({ ready: true, userId: id, profile: !!profile, enrollment, error: null });
+        if (active && current === revision)
+          setState({ ready: true, userId: id, profile: !!profile, enrollment, error: null });
       } catch (error) {
-        if (active && current === revision) setState(value => ({ ...value, ready: true, error: error instanceof Error ? error.message : 'Could not open your workspace.' }));
+        if (active && current === revision)
+          setState((value) => ({
+            ...value,
+            ready: true,
+            error: error instanceof Error ? error.message : 'Could not open your workspace.',
+          }));
       }
     }
     const refresh = () => {
-      void getCurrentUserId().then(resolve).catch(error => {
-        if (active) setState(value => ({ ...value, ready: true, error: error instanceof Error ? error.message : 'Could not check your session.' }));
-      });
+      void getCurrentUserId()
+        .then(resolve)
+        .catch((error) => {
+          if (active)
+            setState((value) => ({
+              ...value,
+              ready: true,
+              error: error instanceof Error ? error.message : 'Could not check your session.',
+            }));
+        });
     };
     refresh();
     const stopProfile = onProfileChange(refresh);
     const stopEnrollment = onEnrollmentChange(refresh);
     let stopAuth: (() => void) | undefined;
-    void onAuthChange(id => { void resolve(id); }).then(off => { if (active) stopAuth = off; else off(); }).catch(() => {});
-    return () => { active = false; revision++; stopProfile(); stopEnrollment(); stopAuth?.(); };
+    void onAuthChange((id) => {
+      void resolve(id);
+    })
+      .then((off) => {
+        if (active) stopAuth = off;
+        else off();
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      revision++;
+      stopProfile();
+      stopEnrollment();
+      stopAuth?.();
+    };
   }, [attempt]);
 
   useEffect(() => {
     if (!state.ready || state.error || !navigationState?.key) return;
     const section: string = segments[0] ?? '';
     const inAuth = authRoutes.includes(section);
-    if (!state.userId) { if (!inAuth) router.replace('/login'); }
-    else if (!state.profile) { if (section !== 'onboarding') router.replace('/onboarding'); }
-    else if (!state.enrollment) { if (section !== 'course-onboarding') router.replace('/course-onboarding'); }
-    else if (inAuth || section === 'onboarding' || section === 'course-onboarding') router.replace('/');
+    if (!state.userId) {
+      if (!inAuth) router.replace('/login');
+    } else if (!state.profile) {
+      if (section !== 'onboarding') router.replace('/onboarding');
+    } else if (!state.enrollment) {
+      if (section !== 'course-onboarding') router.replace('/course-onboarding');
+    } else if (inAuth || section === 'onboarding' || section === 'course-onboarding')
+      router.replace('/');
   }, [state, segments, navigationState?.key]);
 
-  return { ...state, retry: () => { setState(value => ({ ...value, ready: false, error: null })); setAttempt(value => value + 1); } };
+  return {
+    ...state,
+    retry: () => {
+      setState((value) => ({ ...value, ready: false, error: null }));
+      setAttempt((value) => value + 1);
+    },
+  };
 }
 
 export default function RootLayout() {
@@ -183,13 +225,33 @@ export default function RootLayout() {
         />
       </Stack>
       {!gate.ready || gate.error ? (
-        <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 20, backgroundColor: theme.background }}>
-          {gate.error ? <>
-            <ThemedText type="subtitle">Your workspace is safe</ThemedText>
-            <ThemedText accessibilityRole="alert">{gate.error}</ThemedText>
-            <AppButton title="Try again" onPress={gate.retry} />
-            <AppButton secondary title="Return to sign in" onPress={() => { void signOut().catch(gate.retry); }} />
-          </> : <ActivityIndicator color={theme.text} accessibilityLabel="Opening ClassLens" />}
+        <View
+          style={{
+            position: 'absolute',
+            inset: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+            gap: 20,
+            backgroundColor: theme.background,
+          }}
+        >
+          {gate.error ? (
+            <>
+              <ThemedText type="subtitle">Your workspace is safe</ThemedText>
+              <ThemedText accessibilityRole="alert">{gate.error}</ThemedText>
+              <AppButton title="Try again" onPress={gate.retry} />
+              <AppButton
+                secondary
+                title="Return to sign in"
+                onPress={() => {
+                  void signOut().catch(gate.retry);
+                }}
+              />
+            </>
+          ) : (
+            <ActivityIndicator color={theme.text} accessibilityLabel="Opening ClassLens" />
+          )}
         </View>
       ) : null}
     </ThemeProvider>

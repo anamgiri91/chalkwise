@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   linkPrimary: {
     lineHeight: 30,
     fontSize: 14,
-    color: '#387656',
+    color: '#3157D5',
   },
   code: {
     fontFamily: Fonts.mono,

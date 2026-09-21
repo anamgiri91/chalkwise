@@ -18,7 +18,8 @@ type LectureRow = {
 };
 
 // lecture_date is intentionally omitted: Lecture has no lectureDate field yet.
-const lectureColumns = 'id, course_id, title, summary, key_concepts, important_points, assignments, exam_mentions, created_at';
+const lectureColumns =
+  'id, course_id, title, summary, key_concepts, important_points, assignments, exam_mentions, created_at';
 
 function fromRow(row: LectureRow): Lecture {
   return {
@@ -35,7 +36,13 @@ function fromRow(row: LectureRow): Lecture {
 }
 
 function copy(lecture: Lecture): Lecture {
-  return { ...lecture, keyConcepts: [...lecture.keyConcepts], importantPoints: [...lecture.importantPoints], assignments: [...lecture.assignments], examMentions: [...lecture.examMentions] };
+  return {
+    ...lecture,
+    keyConcepts: [...lecture.keyConcepts],
+    importantPoints: [...lecture.importantPoints],
+    assignments: [...lecture.assignments],
+    examMentions: [...lecture.examMentions],
+  };
 }
 
 const lectures = mockLectures.map(copy);
@@ -43,9 +50,11 @@ let nextId = 1;
 const apiSaveKeys = new Map<string, string>();
 
 export async function getLectures(courseId: string): Promise<Lecture[]> {
-  if (getDataMode() === 'api') return apiRequest(`/lectures?courseId=${encodeURIComponent(courseId)}`);
+  if (getDataMode() === 'api')
+    return apiRequest(`/lectures?courseId=${encodeURIComponent(courseId)}`);
   if (getDataMode() === 'mock') {
-    return lectures.filter((lecture) => lecture.courseId === courseId)
+    return lectures
+      .filter((lecture) => lecture.courseId === courseId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id))
       .map(copy);
   }
@@ -91,13 +100,21 @@ export async function createLecture(input: CreateLectureInput): Promise<Lecture>
     const { randomUUID } = await import('expo-crypto');
     const key = apiSaveKeys.get(signature) ?? randomUUID();
     apiSaveKeys.set(signature, key);
-    const lecture = await apiRequest<Lecture>('/lectures', { method: 'POST', body: input, idempotencyKey: key });
+    const lecture = await apiRequest<Lecture>('/lectures', {
+      method: 'POST',
+      body: input,
+      idempotencyKey: key,
+    });
     apiSaveKeys.delete(signature);
     return lecture;
   }
   if (!(await getCourse(input.courseId))) throw new Error('Course not found.');
   if (getDataMode() === 'mock') {
-    const lecture = copy({ ...input, id: `local-lecture-${nextId++}`, createdAt: new Date().toISOString() });
+    const lecture = copy({
+      ...input,
+      id: `local-lecture-${nextId++}`,
+      createdAt: new Date().toISOString(),
+    });
     lectures.unshift(lecture);
     return copy(lecture);
   }
@@ -108,12 +125,22 @@ export async function createLecture(input: CreateLectureInput): Promise<Lecture>
   const { data: auth } = await supabase.auth.getSession();
   const ownerId = auth.session?.user.id;
   if (!ownerId) throw new Error('You are signed out. Sign in and try again.');
-  const { data, error } = await supabase.from('lectures').insert({
-    id, course_id: input.courseId, title: input.title, summary: input.summary,
-    key_concepts: input.keyConcepts, important_points: input.importantPoints,
-    assignments: input.assignments, exam_mentions: input.examMentions,
-    owner_id: ownerId,
-  }).select(lectureColumns).returns<LectureRow[]>().single();
+  const { data, error } = await supabase
+    .from('lectures')
+    .insert({
+      id,
+      course_id: input.courseId,
+      title: input.title,
+      summary: input.summary,
+      key_concepts: input.keyConcepts,
+      important_points: input.importantPoints,
+      assignments: input.assignments,
+      exam_mentions: input.examMentions,
+      owner_id: ownerId,
+    })
+    .select(lectureColumns)
+    .returns<LectureRow[]>()
+    .single();
   if (error) throw new Error(`Could not create lecture (attempted ID ${id}): ${error.message}`);
   if (!data) throw new Error(`No saved lecture was returned (attempted ID ${id}).`);
   return fromRow(data);
@@ -124,7 +151,10 @@ export type SharedLecture = Lecture & { ownerId: string };
 
 /** Catch Up: lectures shared by the given classmates, newest first. */
 export async function getLecturesByOwners(ownerIds: string[]): Promise<SharedLecture[]> {
-  if (getDataMode() === 'api') return ownerIds.length ? apiRequest(`/shared-lectures?owners=${encodeURIComponent(ownerIds.slice(0, 40).join(','))}`) : [];
+  if (getDataMode() === 'api')
+    return ownerIds.length
+      ? apiRequest(`/shared-lectures?owners=${encodeURIComponent(ownerIds.slice(0, 40).join(','))}`)
+      : [];
   if (getDataMode() !== 'supabase' || !ownerIds.length) return [];
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase
@@ -141,29 +171,43 @@ export async function getLecturesByOwners(ownerIds: string[]): Promise<SharedLec
 /** Copy saved analysis and real captures; retries resume the same user's copy. */
 export async function copyLectureToMyNotes(lectureId: string, courseId?: string): Promise<Lecture> {
   if (getDataMode() === 'api') {
-    if (courseId && (await getLecture(lectureId))?.courseId !== courseId) throw new Error('Shared notes must stay in their matching course.');
+    if (courseId && (await getLecture(lectureId))?.courseId !== courseId)
+      throw new Error('Shared notes must stay in their matching course.');
     return apiRequest(`/lectures/${encodeURIComponent(lectureId)}/copy`, { method: 'POST' });
   }
-  if (getDataMode() !== 'supabase') throw new Error('Catch Up requires EXPO_PUBLIC_DATA_MODE=supabase.');
+  if (getDataMode() !== 'supabase')
+    throw new Error('Catch Up requires EXPO_PUBLIC_DATA_MODE=supabase.');
   const { supabase } = await import('@/lib/supabase');
   const { copyLectureMaterials } = await import('./materials');
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError || !auth.user) throw new Error('Sign in to add these notes.');
   const source = await getLecture(lectureId);
   if (!source) throw new Error('That shared lecture is no longer available.');
-  if (courseId && courseId !== source.courseId) throw new Error('Shared notes must stay in their matching course.');
+  if (courseId && courseId !== source.courseId)
+    throw new Error('Shared notes must stay in their matching course.');
   const id = `catchup:${auth.user.id}:${source.id}`;
   let saved = await getLecture(id);
   if (!saved) {
-    const { data, error } = await supabase.from('lectures').insert({
-      id, owner_id: auth.user.id, course_id: source.courseId,
-      title: source.title, summary: source.summary,
-      key_concepts: source.keyConcepts, important_points: source.importantPoints,
-      assignments: source.assignments, exam_mentions: source.examMentions,
-    }).select(lectureColumns).returns<LectureRow[]>().single();
+    const { data, error } = await supabase
+      .from('lectures')
+      .insert({
+        id,
+        owner_id: auth.user.id,
+        course_id: source.courseId,
+        title: source.title,
+        summary: source.summary,
+        key_concepts: source.keyConcepts,
+        important_points: source.importantPoints,
+        assignments: source.assignments,
+        exam_mentions: source.examMentions,
+      })
+      .select(lectureColumns)
+      .returns<LectureRow[]>()
+      .single();
     // Recover a concurrent insert or a committed insert with a lost response.
     saved = data ? fromRow(data) : await getLecture(id);
-    if (!saved) throw new Error(`Could not copy lecture: ${error?.message ?? 'No saved lecture returned.'}`);
+    if (!saved)
+      throw new Error(`Could not copy lecture: ${error?.message ?? 'No saved lecture returned.'}`);
   }
   await copyLectureMaterials(source.id, saved.id);
   return saved;

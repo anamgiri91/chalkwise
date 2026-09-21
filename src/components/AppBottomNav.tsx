@@ -1,342 +1,158 @@
-import {
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { router, usePathname } from 'expo-router';
+import { ThemedText } from './themed-text';
+import { AppIcon, type IconName } from './ui/AppIcon';
+import { useTheme } from '@/hooks/use-theme';
+import { Brand } from '@/constants/theme';
 
-import {
-  router,
-  usePathname,
-} from 'expo-router';
-
-import {
-  useRef,
-  useState,
-} from 'react';
-
-import Svg, { Circle } from 'react-native-svg';
-
-import {
-  CaptureMode,
-  CaptureModeSheet,
-} from '@/components/CaptureModeSheet';
-
-import { ThemedText } from '@/components/themed-text';
-
-type MainRoute =
-  | '/'
-  | '/courses'
-  | '/catchup'
-  | '/profile';
-
-const HOLD_TIME = 1000;
-
-export function AppBottomNav() {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const longPressTriggered = useRef(false);
-
-  function handlePressIn() {
-    longPressTriggered.current = false;
-  }
-
-  function handleLongPress() {
-    longPressTriggered.current = true;
-    setSheetOpen(true);
-  }
-
-  function handlePress() {
-    if (longPressTriggered.current) {
-      longPressTriggered.current = false;
-      return;
-    }
-
-    router.push({
-      pathname: '/capture',
-      params: {
-        mode: 'photo',
-        autoOpen: 'camera',
-      },
-    });
-  }
-
-  function chooseMode(mode: CaptureMode) {
-    longPressTriggered.current = false;
-    setSheetOpen(false);
-
-    router.push({
-      pathname: '/capture',
-      params: {
-        mode,
-        autoOpen: mode === 'photo' ? 'camera' : undefined,
-      },
-    });
-  }
-
-  return (
-    <>
-      <View style={styles.wrapper}>
-        <View style={styles.nav}>
-          <NavItem icon="🏠" label="Home" route="/" />
-          <NavItem icon="📚" label="Courses" route="/courses" />
-
-          <View style={styles.centerSpace} />
-
-          <NavItem icon="🔄" label="CatchUp" route="/catchup" />
-          <NavItem icon="👤" label="Profile" route="/profile" />
-
-          <View style={styles.capturePosition}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="ClassLens capture"
-              accessibilityHint="Tap for photo capture. Hold for one second for photo, video, audio and file options."
-              delayLongPress={HOLD_TIME}
-              onPressIn={handlePressIn}
-              onLongPress={handleLongPress}
-              onPress={handlePress}
-              hitSlop={24}
-              pressRetentionOffset={{
-                top: 100,
-                bottom: 100,
-                left: 100,
-                right: 100,
-              }}
-              style={({ pressed }) => [
-                styles.capture,
-                pressed && styles.capturePressed,
-              ]}
-            >
-              <Svg
-                width="54"
-                height="54"
-                viewBox="0 0 512 512"
-              >
-                <Circle
-                  cx="256"
-                  cy="210"
-                  r="145"
-                  fill="none"
-                  stroke="#FFFFFF"
-                  strokeWidth="34"
-                />
-
-                <Circle
-                  cx="256"
-                  cy="210"
-                  r="98"
-                  fill="none"
-                  stroke="#C4A66A"
-                  strokeWidth="28"
-                />
-
-                <Circle
-                  cx="256"
-                  cy="210"
-                  r="50"
-                  fill="#FFFFFF"
-                />
-
-                <Circle
-                  cx="256"
-                  cy="210"
-                  r="25"
-                  fill="#4A7C59"
-                />
-
-                <Circle
-                  cx="256"
-                  cy="42"
-                  r="17"
-                  fill="#C4A66A"
-                />
-              </Svg>
-            </Pressable>
-          </View>
-        </View>
-
-        <ThemedText
-          allowFontScaling={false}
-          style={styles.hint}
-        >
-          Tap camera · Hold 1s for more
-        </ThemedText>
-      </View>
-
-      <CaptureModeSheet
-        visible={sheetOpen}
-        onClose={() => {
-          longPressTriggered.current = false;
-          setSheetOpen(false);
-        }}
-        onSelect={chooseMode}
-      />
-    </>
-  );
-}
-
-function NavItem({
-  icon,
-  label,
-  route,
-}: {
-  icon: string;
+const items: {
+  route: '/' | '/courses' | '/catchup' | '/profile';
   label: string;
-  route: MainRoute;
-}) {
+  icon: IconName;
+}[] = [
+  { route: '/', label: 'Overview', icon: 'home' },
+  { route: '/courses', label: 'My courses', icon: 'book' },
+  { route: '/catchup', label: 'CatchUp', icon: 'users' },
+  { route: '/profile', label: 'Profile', icon: 'user' },
+];
+export function AppBottomNav({ vertical = false }: { vertical?: boolean }) {
   const pathname = usePathname();
-
-  const active =
-    route === '/'
-      ? pathname === '/'
-      : pathname.startsWith(route);
-
+  const theme = useTheme();
+  const capture = () =>
+    router.push({ pathname: '/capture', params: { mode: 'photo', autoOpen: 'camera' } });
+  const navItem = (item: (typeof items)[number]) => {
+    const active = item.route === '/' ? pathname === '/' : pathname.startsWith(item.route);
+    return (
+      <Pressable
+        key={item.route}
+        accessibilityRole="tab"
+        accessibilityLabel={item.label}
+        accessibilityState={{ selected: active }}
+        onPress={() => router.replace(item.route)}
+        style={({ pressed }) => [
+          styles.item,
+          vertical ? styles.verticalItem : styles.mobileItem,
+          active && { backgroundColor: theme.backgroundSelected },
+          pressed && { opacity: 0.6 },
+        ]}
+      >
+        <AppIcon name={item.icon} color={active ? theme.text : theme.textSecondary} />
+        <ThemedText
+          style={[
+            styles.label,
+            !vertical && styles.mobileLabel,
+            { color: active ? theme.text : theme.textSecondary },
+          ]}
+        >
+          {item.label}
+        </ThemedText>
+      </Pressable>
+    );
+  };
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-      onPress={() => router.replace(route as any)}
-      style={({ pressed }) => [
-        styles.item,
-        pressed && styles.itemPressed,
+    <View
+      style={[
+        vertical ? styles.sidebar : styles.bottom,
+        { backgroundColor: theme.backgroundElement },
       ]}
     >
-      <ThemedText
-        allowFontScaling={false}
-        style={[
-          styles.icon,
-          active && styles.active,
-        ]}
-      >
-        {icon}
-      </ThemedText>
-
-      <ThemedText
-        allowFontScaling={false}
-        style={[
-          styles.label,
-          active && styles.active,
-        ]}
-      >
-        {label}
-      </ThemedText>
-
-      {active ? <View style={styles.activeDot} /> : null}
-    </Pressable>
+      {vertical ? (
+        <>
+          <View style={styles.brand}>
+            <View style={styles.logo}>
+              <AppIcon name="camera" color="white" size={22} />
+            </View>
+            <ThemedText style={styles.brandName}>ClassLens</ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary" style={{ marginBottom: 28 }}>
+            Your learning workspace
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Capture lecture"
+            onPress={capture}
+            style={({ pressed }) => [styles.newCapture, { opacity: pressed ? 0.7 : 1 }]}
+          >
+            <AppIcon name="plus" color="white" size={20} />
+            <ThemedText style={{ color: 'white', fontWeight: '600' }}>New capture</ThemedText>
+          </Pressable>
+          <View style={styles.verticalItems}>{items.map(navItem)}</View>
+          <View style={styles.sidebarNote}>
+            <AppIcon name="spark" color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary">
+              A little review today.{'\n'}A clearer idea tomorrow.
+            </ThemedText>
+          </View>
+        </>
+      ) : (
+        <>
+          {items.slice(0, 2).map(navItem)}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Capture lecture"
+            onPress={capture}
+            style={styles.capture}
+          >
+            <AppIcon name="camera" color="white" size={23} />
+          </Pressable>
+          {items.slice(2).map(navItem)}
+        </>
+      )}
+    </View>
   );
 }
-
 const styles = StyleSheet.create({
-  wrapper: {
-    paddingHorizontal: 14,
-    paddingBottom: 7,
-    backgroundColor: '#F7F6F0',
+  sidebar: {
+    width: 230,
+    padding: 24,
+    paddingTop: 32,
+    gap: 4,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(100,120,150,0.12)',
   },
-
-  nav: {
-    height: 78,
-    borderRadius: 27,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E5DE',
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  brandName: { fontSize: 23, fontWeight: '700', letterSpacing: -0.8 },
+  logo: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: Brand.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newCapture: {
+    backgroundColor: Brand.accent,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 7,
-    position: 'relative',
-    shadowColor: '#13271F',
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    elevation: 10,
-  },
-
-  item: {
-    width: 58,
-    minHeight: 62,
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    position: 'relative',
+    gap: 8,
+    padding: 13,
+    borderRadius: 12,
+    marginBottom: 28,
+    minHeight: 48,
   },
-
-  itemPressed: {
-    opacity: 0.5,
-    transform: [{ scale: 0.94 }],
-  },
-
-  icon: {
-    color: '#8C9791',
-    fontSize: 23,
-    lineHeight: 28,
-  },
-
-  label: {
-    color: '#8C9791',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-
-  active: {
-    color: '#4A7C59',
-  },
-
-  activeDot: {
-    position: 'absolute',
-    bottom: 0,
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#C4A66A',
-  },
-
-  centerSpace: {
-    width: 78,
-  },
-
-  capturePosition: {
-    position: 'absolute',
-    left: '50%',
-    marginLeft: -40,
-    top: -32,
-    width: 80,
-    height: 80,
+  verticalItems: { gap: 8 },
+  item: { alignItems: 'center', borderRadius: 10 },
+  verticalItem: { flexDirection: 'row', padding: 12, gap: 12, minHeight: 48 },
+  mobileItem: { flex: 1, paddingVertical: 8, gap: 4, minHeight: 54 },
+  label: { fontSize: 14, fontWeight: '600' },
+  mobileLabel: { fontSize: 10, lineHeight: 16 },
+  sidebarNote: { marginTop: 'auto', paddingTop: 40, gap: 12 },
+  bottom: {
+    flexDirection: 'row',
+    gap: 2,
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(100,120,150,0.12)',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-
   capture: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#4A7C59',
-    borderWidth: 5,
-    borderColor: '#F7F6F0',
+    backgroundColor: Brand.accent,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#4A7C59',
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    shadowOffset: {
-      width: 0,
-      height: 7,
-    },
-    elevation: 14,
-  },
-
-  capturePressed: {
-    transform: [{ scale: 0.9 }],
-    opacity: 0.9,
-    borderColor: '#C4A66A',
-  },
-
-  hint: {
-    alignSelf: 'center',
-    marginTop: 3,
-    color: '#829087',
-    fontSize: 8,
-    fontWeight: '600',
+    marginHorizontal: 6,
   },
 });

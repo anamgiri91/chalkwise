@@ -5,13 +5,15 @@ import { getCourse, getCourses } from '@/services/courses';
 import type { Course } from '@/types';
 
 /** Mock mode has one demo user; enrollment starts empty and resets on reload. */
-const mockEnrollments = new Set<string>(mockCourses.map(course => course.id));
+const mockEnrollments = new Set<string>(mockCourses.map((course) => course.id));
 const enrollmentListeners = new Set<() => void>();
 
 /** Lets the route gate re-check enrollment immediately after a change. */
 export function onEnrollmentChange(listener: () => void): () => void {
   enrollmentListeners.add(listener);
-  return () => { enrollmentListeners.delete(listener); };
+  return () => {
+    enrollmentListeners.delete(listener);
+  };
 }
 
 function notifyEnrollmentChange() {
@@ -59,8 +61,11 @@ export async function getMyEnrolledCourses(): Promise<Course[]> {
 /** Repeated enrollment preserves the original membership and joined_at. */
 export async function enrollInCourse(courseId: string): Promise<void> {
   if (getDataMode() === 'api') {
-    await apiRequest(`/enrollments/${encodeURIComponent(requireCourseId(courseId))}`, { method: 'PUT' });
-    notifyEnrollmentChange(); return;
+    await apiRequest(`/enrollments/${encodeURIComponent(requireCourseId(courseId))}`, {
+      method: 'PUT',
+    });
+    notifyEnrollmentChange();
+    return;
   }
   const id = requireCourseId(courseId);
   if (getDataMode() === 'mock') {
@@ -71,12 +76,13 @@ export async function enrollInCourse(courseId: string): Promise<void> {
   }
 
   const { supabase, userId } = await session();
-  const { error } = await supabase
-    .from('course_memberships')
-    .upsert({ user_id: userId, course_id: id }, {
+  const { error } = await supabase.from('course_memberships').upsert(
+    { user_id: userId, course_id: id },
+    {
       onConflict: 'user_id,course_id',
       ignoreDuplicates: true,
-    });
+    },
+  );
 
   // The foreign key rejects unknown catalog courses; never create one implicitly.
   if (error) throw new Error(`Could not enroll in course: ${error.message}`);
@@ -86,8 +92,11 @@ export async function enrollInCourse(courseId: string): Promise<void> {
 /** Removing an absent membership is a no-op; the catalog course is never deleted. */
 export async function unenrollFromCourse(courseId: string): Promise<void> {
   if (getDataMode() === 'api') {
-    await apiRequest(`/enrollments/${encodeURIComponent(requireCourseId(courseId))}`, { method: 'DELETE' });
-    notifyEnrollmentChange(); return;
+    await apiRequest(`/enrollments/${encodeURIComponent(requireCourseId(courseId))}`, {
+      method: 'DELETE',
+    });
+    notifyEnrollmentChange();
+    return;
   }
   const id = requireCourseId(courseId);
   if (getDataMode() === 'mock') {

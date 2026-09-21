@@ -25,18 +25,30 @@ export default function SignupScreen() {
 
   async function confirm() {
     if (!confirmationEmail || busy) return;
-    setBusy(true); setError('');
-    try { await confirmEmail(confirmationEmail, code); router.replace('/login'); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not confirm your email.'); }
-    finally { setBusy(false); }
+    setBusy(true);
+    setError('');
+    try {
+      await confirmEmail(confirmationEmail, code);
+      router.replace('/login');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not confirm your email.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function resend() {
     if (!confirmationEmail || busy) return;
-    setBusy(true); setError('');
-    try { await resendConfirmationCode(confirmationEmail); setConfirmationMessage('A new code is on its way.'); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not resend the code.'); }
-    finally { setBusy(false); }
+    setBusy(true);
+    setError('');
+    try {
+      await resendConfirmationCode(confirmationEmail);
+      setConfirmationMessage('A new code is on its way.');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not resend the code.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   const ready = email.trim().length > 0 && password.length > 0;
@@ -75,27 +87,54 @@ export default function SignupScreen() {
             Check your email
           </ThemedText>
           <ThemedText themeColor="textSecondary">
-            {supportsEmailCode() ? `Enter the confirmation code sent to ${confirmationEmail}.` : `Open the confirmation link sent to ${confirmationEmail}, then sign in.`}
+            {supportsEmailCode()
+              ? `Enter the confirmation code sent to ${confirmationEmail}.`
+              : `Open the confirmation link sent to ${confirmationEmail}, then sign in.`}
           </ThemedText>
         </View>
 
-        {supportsEmailCode() ? <>
-          <TextInput value={code} onChangeText={setCode} editable={!busy} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="one-time-code" accessibilityLabel="Email confirmation code" placeholder="Confirmation code" placeholderTextColor={theme.textSecondary} style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]} />
-          <AppButton title={busy ? 'Please wait…' : 'Confirm email'} disabled={busy || !code.trim()} onPress={confirm} />
-          <AppButton secondary title="Send another code" disabled={busy} onPress={resend} />
-        </> : null}
+        {supportsEmailCode() ? (
+          <>
+            <TextInput
+              value={code}
+              onChangeText={setCode}
+              editable={!busy}
+              keyboardType="number-pad"
+              textContentType="oneTimeCode"
+              autoComplete="one-time-code"
+              accessibilityLabel="Email confirmation code"
+              placeholder="Confirmation code"
+              placeholderTextColor={theme.textSecondary}
+              style={[
+                styles.input,
+                { color: theme.text, backgroundColor: theme.backgroundElement },
+              ]}
+            />
+            <AppButton
+              title={busy ? 'Please wait…' : 'Confirm email'}
+              disabled={busy || !code.trim()}
+              onPress={confirm}
+            />
+            <AppButton secondary title="Send another code" disabled={busy} onPress={resend} />
+          </>
+        ) : null}
         {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
-        {confirmationMessage ? <ThemedText accessibilityLiveRegion="polite">{confirmationMessage}</ThemedText> : null}
+        {confirmationMessage ? (
+          <ThemedText accessibilityLiveRegion="polite">{confirmationMessage}</ThemedText>
+        ) : null}
         <AppButton title="Go to sign in" secondary onPress={() => router.replace('/login')} />
       </Screen>
     );
   }
 
-  const input = [styles.input, {
-    color: theme.text,
-    backgroundColor: theme.backgroundElement,
-    borderColor: theme.backgroundSelected,
-  }];
+  const input = [
+    styles.input,
+    {
+      color: theme.text,
+      backgroundColor: theme.backgroundElement,
+      borderColor: theme.backgroundSelected,
+    },
+  ];
 
   return (
     <Screen avoidKeyboard>
@@ -114,7 +153,9 @@ export default function SignupScreen() {
       </View>
 
       <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>EMAIL</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.label}>
+          EMAIL
+        </ThemedText>
         <TextInput
           value={email}
           onChangeText={setEmail}
@@ -135,7 +176,9 @@ export default function SignupScreen() {
       </View>
 
       <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>PASSWORD</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.label}>
+          PASSWORD
+        </ThemedText>
         <PasswordField
           ref={passwordRef}
           value={password}
@@ -155,7 +198,10 @@ export default function SignupScreen() {
       </View>
 
       {error ? (
-        <ThemedText accessibilityLiveRegion="polite" style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}>
+        <ThemedText
+          accessibilityLiveRegion="polite"
+          style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}
+        >
           {error}
         </ThemedText>
       ) : null}
@@ -172,9 +218,13 @@ export default function SignupScreen() {
           (pressed || !ready || busy) && styles.dim,
         ]}
       >
-        {busy
-          ? <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
-          : <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>Create account</ThemedText>}
+        {busy ? (
+          <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
+        ) : (
+          <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>
+            Create account
+          </ThemedText>
+        )}
       </Pressable>
 
       <Pressable
@@ -203,8 +253,13 @@ const styles = StyleSheet.create({
   field: { gap: 7 },
   label: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
   input: {
-    minHeight: 54, borderRadius: 17, paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 16, lineHeight: 23, borderWidth: 1,
+    minHeight: 54,
+    borderRadius: 17,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    lineHeight: 23,
+    borderWidth: 1,
   },
   error: { fontSize: 14, lineHeight: 21 },
   action: { minHeight: 54, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
