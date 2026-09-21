@@ -1,15 +1,20 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet } from 'react-native';
-import { ThemedView } from '@/components/themed-view';
+import { StyleSheet, View } from 'react-native';
+import { Radius } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
+/** A panel, not a pill: a hairline border reads more precisely than a soft shadow. */
 export function AppCard({ children }: PropsWithChildren) {
+  const theme = useTheme();
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
+    <View
+      style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+    >
       {children}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 24, borderRadius: 18, gap: 16, boxShadow: '0 2px 12px rgba(25, 36, 59, 0.04)' },
+  card: { padding: 20, borderRadius: Radius.large, gap: 14, borderWidth: 1 },
 });

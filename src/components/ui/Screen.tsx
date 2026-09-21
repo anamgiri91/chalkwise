@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBottomNav } from '@/components/AppBottomNav';
-import { MaxContentWidth } from '@/constants/theme';
+import { MaxContentWidth, SidebarBreakpoint } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = PropsWithChildren<{
@@ -31,7 +31,7 @@ export function Screen({
   const theme = useTheme();
   const headerHeight = useHeaderHeight();
   const { width } = useWindowDimensions();
-  const sidebar = showBottomNav && width >= 1000;
+  const sidebar = showBottomNav && width >= SidebarBreakpoint;
   const content = (
     <SafeAreaView
       edges={headerAbove ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}

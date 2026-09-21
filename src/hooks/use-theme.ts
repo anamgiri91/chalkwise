@@ -10,5 +10,6 @@ export function useTheme() {
   const scheme = useColorScheme();
   const theme = scheme === 'unspecified' ? 'light' : scheme;
 
-  return Colors[theme];
+  // Exposed so screens stop inferring the scheme by comparing background colours.
+  return { ...Colors[theme], isDark: theme === 'dark' };
 }

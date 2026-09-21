@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { Brand, Fonts } from '@/constants/theme';
+import { Fonts, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface Props {
@@ -18,9 +18,9 @@ export function AppButton({
   accessibilityHint,
 }: Props) {
   const theme = useTheme();
-  const dark = theme.background !== Brand.paper;
-  const backgroundColor = secondary ? theme.backgroundSelected : dark ? Brand.lime : Brand.forest;
-  const color = secondary ? theme.text : dark ? Brand.ink : '#FFFFFF';
+  // Accent inverts between schemes, so the token carries the decision.
+  const backgroundColor = secondary ? theme.backgroundElement : theme.accent;
+  const color = secondary ? theme.text : theme.accentText;
   return (
     <Pressable
       accessibilityRole="button"
@@ -32,6 +32,7 @@ export function AppButton({
       style={({ pressed }) => [
         styles.button,
         { backgroundColor },
+        secondary && { borderWidth: 1, borderColor: theme.border },
         (pressed || disabled) && styles.dim,
       ]}
     >
@@ -42,18 +43,18 @@ export function AppButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: Brand.forest,
-    padding: 14,
-    borderRadius: 12,
-    minHeight: 48,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: Radius.medium,
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
   dim: { opacity: 0.6 },
   label: {
     fontFamily: Fonts.sans,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: '600',
     textAlign: 'center',
     flexShrink: 1,

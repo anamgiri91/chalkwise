@@ -3,7 +3,7 @@ import { router, usePathname } from 'expo-router';
 import { ThemedText } from './themed-text';
 import { AppIcon, type IconName } from './ui/AppIcon';
 import { useTheme } from '@/hooks/use-theme';
-import { Brand } from '@/constants/theme';
+import { Radius, SidebarWidth } from '@/constants/theme';
 
 const items: {
   route: '/' | '/courses' | '/catchup' | '/profile';
@@ -15,11 +15,13 @@ const items: {
   { route: '/catchup', label: 'CatchUp', icon: 'users' },
   { route: '/profile', label: 'Profile', icon: 'user' },
 ];
+
 export function AppBottomNav({ vertical = false }: { vertical?: boolean }) {
   const pathname = usePathname();
   const theme = useTheme();
   const capture = () =>
     router.push({ pathname: '/capture', params: { mode: 'photo', autoOpen: 'camera' } });
+
   const navItem = (item: (typeof items)[number]) => {
     const active = item.route === '/' ? pathname === '/' : pathname.startsWith(item.route);
     return (
@@ -33,15 +35,19 @@ export function AppBottomNav({ vertical = false }: { vertical?: boolean }) {
           styles.item,
           vertical ? styles.verticalItem : styles.mobileItem,
           active && { backgroundColor: theme.backgroundSelected },
-          pressed && { opacity: 0.6 },
+          pressed && { backgroundColor: theme.backgroundSelected, opacity: 0.8 },
         ]}
       >
-        <AppIcon name={item.icon} color={active ? theme.text : theme.textSecondary} />
+        <AppIcon
+          name={item.icon}
+          size={vertical ? 17 : 20}
+          color={active ? theme.text : theme.textSecondary}
+        />
         <ThemedText
           style={[
-            styles.label,
-            !vertical && styles.mobileLabel,
+            vertical ? styles.label : styles.mobileLabel,
             { color: active ? theme.text : theme.textSecondary },
+            active && styles.activeLabel,
           ]}
         >
           {item.label}
@@ -49,108 +55,126 @@ export function AppBottomNav({ vertical = false }: { vertical?: boolean }) {
       </Pressable>
     );
   };
+
+  if (!vertical) {
+    return (
+      <View
+        style={[
+          styles.bottom,
+          { backgroundColor: theme.backgroundElement, borderTopColor: theme.border },
+        ]}
+      >
+        {items.slice(0, 2).map(navItem)}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Capture lecture"
+          onPress={capture}
+          style={({ pressed }) => [
+            styles.capture,
+            { backgroundColor: theme.accent },
+            pressed && styles.dim,
+          ]}
+        >
+          <AppIcon name="camera" color={theme.accentText} size={21} />
+        </Pressable>
+        {items.slice(2).map(navItem)}
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
-        vertical ? styles.sidebar : styles.bottom,
-        { backgroundColor: theme.backgroundElement },
+        styles.sidebar,
+        { backgroundColor: theme.backgroundElement, borderRightColor: theme.border },
       ]}
     >
-      {vertical ? (
-        <>
-          <View style={styles.brand}>
-            <View style={styles.logo}>
-              <AppIcon name="camera" color="white" size={22} />
-            </View>
-            <ThemedText style={styles.brandName}>Chalkwise</ThemedText>
-          </View>
-          <ThemedText type="small" themeColor="textSecondary" style={{ marginBottom: 28 }}>
-            Your learning workspace
-          </ThemedText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Capture lecture"
-            onPress={capture}
-            style={({ pressed }) => [styles.newCapture, { opacity: pressed ? 0.7 : 1 }]}
-          >
-            <AppIcon name="plus" color="white" size={20} />
-            <ThemedText style={{ color: 'white', fontWeight: '600' }}>New capture</ThemedText>
-          </Pressable>
-          <View style={styles.verticalItems}>{items.map(navItem)}</View>
-          <View style={styles.sidebarNote}>
-            <AppIcon name="spark" color={theme.textSecondary} />
-            <ThemedText type="small" themeColor="textSecondary">
-              A little review today.{'\n'}A clearer idea tomorrow.
-            </ThemedText>
-          </View>
-        </>
-      ) : (
-        <>
-          {items.slice(0, 2).map(navItem)}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Capture lecture"
-            onPress={capture}
-            style={styles.capture}
-          >
-            <AppIcon name="camera" color="white" size={23} />
-          </Pressable>
-          {items.slice(2).map(navItem)}
-        </>
-      )}
+      <View style={styles.brand}>
+        <View style={[styles.mark, { backgroundColor: theme.accent }]}>
+          <AppIcon name="camera" color={theme.accentText} size={15} />
+        </View>
+        <ThemedText style={styles.brandName}>Chalkwise</ThemedText>
+      </View>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Capture lecture"
+        onPress={capture}
+        style={({ pressed }) => [
+          styles.newCapture,
+          { backgroundColor: theme.accent },
+          pressed && styles.dim,
+        ]}
+      >
+        <AppIcon name="plus" color={theme.accentText} size={16} />
+        <ThemedText style={[styles.newCaptureLabel, { color: theme.accentText }]}>
+          New capture
+        </ThemedText>
+      </Pressable>
+
+      <ThemedText style={[styles.sectionLabel, { color: theme.textTertiary }]}>
+        WORKSPACE
+      </ThemedText>
+      <View style={styles.verticalItems}>{items.map(navItem)}</View>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   sidebar: {
-    width: 230,
-    padding: 24,
-    paddingTop: 32,
-    gap: 4,
+    width: SidebarWidth,
+    paddingHorizontal: 12,
+    paddingTop: 20,
+    paddingBottom: 16,
     borderRightWidth: 1,
-    borderRightColor: 'rgba(100,120,150,0.12)',
   },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  brandName: { fontSize: 23, fontWeight: '700', letterSpacing: -0.8 },
-  logo: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: Brand.accent,
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 8 },
+  brandName: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2 },
+  mark: {
+    width: 26,
+    height: 26,
+    borderRadius: Radius.small,
     alignItems: 'center',
     justifyContent: 'center',
   },
   newCapture: {
-    backgroundColor: Brand.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    padding: 13,
-    borderRadius: 12,
-    marginBottom: 28,
-    minHeight: 48,
+    gap: 7,
+    height: 34,
+    borderRadius: Radius.medium,
+    marginTop: 20,
   },
-  verticalItems: { gap: 8 },
-  item: { alignItems: 'center', borderRadius: 10 },
-  verticalItem: { flexDirection: 'row', padding: 12, gap: 12, minHeight: 48 },
-  mobileItem: { flex: 1, paddingVertical: 8, gap: 4, minHeight: 54 },
-  label: { fontSize: 14, fontWeight: '600' },
-  mobileLabel: { fontSize: 10, lineHeight: 16 },
-  sidebarNote: { marginTop: 'auto', paddingTop: 40, gap: 12 },
+  newCaptureLabel: { fontSize: 13, fontWeight: '600' },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    paddingHorizontal: 8,
+    marginTop: 24,
+    marginBottom: 6,
+  },
+  verticalItems: { gap: 1 },
+  item: { alignItems: 'center', borderRadius: Radius.medium },
+  verticalItem: { flexDirection: 'row', paddingHorizontal: 8, gap: 10, height: 32 },
+  mobileItem: { flex: 1, paddingVertical: 6, gap: 3, minHeight: 52, justifyContent: 'center' },
+  label: { fontSize: 13, fontWeight: '500' },
+  activeLabel: { fontWeight: '600' },
+  mobileLabel: { fontSize: 10, lineHeight: 14, fontWeight: '500' },
+  dim: { opacity: 0.75 },
   bottom: {
     flexDirection: 'row',
     gap: 2,
-    padding: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(100,120,150,0.12)',
     alignItems: 'center',
   },
   capture: {
-    backgroundColor: Brand.accent,
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.large,
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 6,

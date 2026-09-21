@@ -17,7 +17,6 @@ import { signOut } from '@/services/auth';
 import { StatusBar } from 'expo-status-bar';
 
 import { useTheme } from '@/hooks/use-theme';
-import { Brand } from '@/constants/theme';
 import { getCurrentUserId, getMyProfile, onAuthChange, onProfileChange } from '@/services/auth';
 import { hasEnrolledCourses, onEnrollmentChange } from '@/services/enrollment';
 
@@ -113,7 +112,7 @@ function useAuthGate() {
 export default function RootLayout() {
   const theme = useTheme();
   const gate = useAuthGate();
-  const dark = theme.background !== Brand.paper;
+  const dark = theme.isDark;
   const navigationTheme = dark ? DarkTheme : DefaultTheme;
 
   return (
