@@ -22,7 +22,7 @@ export function EmptyState({ title, description, loading, action, onPress }: {
 }) {
   const theme = useTheme();
   return <View accessibilityState={{ busy: !!loading }} style={[styles.empty, { backgroundColor: theme.backgroundElement }]}>
-    {loading ? <ActivityIndicator color={theme.text} accessibilityLabel={title} /> : <ThemedText accessible={false} importantForAccessibility="no" style={styles.mark}>⌑</ThemedText>}
+    {loading ? <ActivityIndicator color={theme.text} accessibilityLabel={title} /> : <ThemedText aria-hidden importantForAccessibility="no" style={styles.mark}>⌑</ThemedText>}
     <ThemedText accessibilityRole="header" style={styles.title}>{title}</ThemedText>
     <ThemedText themeColor="textSecondary" style={styles.center}>{description}</ThemedText>
     {action && onPress ? <AppButton title={action} onPress={onPress} /> : null}

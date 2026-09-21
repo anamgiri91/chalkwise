@@ -9,7 +9,7 @@ import { AppIcon } from '@/components/ui/AppIcon';
 import { EmptyState, SectionHeader, StatusBadge } from '@/components/ui/Editorial';
 import { CourseCard } from '@/components/CourseCard';
 import { LectureCard } from '@/components/LectureCard';
-import { Brand } from '@/constants/theme';
+import { Brand, Colors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getStudyDashboard, getWorkspaceCapabilities } from '@/services/study';
 import { getInitials } from '@/features/profile/initials';
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   focusTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
   focusLabel: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  focusEyebrow: { color: '#BED1FF', fontSize: 11, letterSpacing: 1.3, fontWeight: '700' },
+  focusEyebrow: { color: Colors.dark.accent, fontSize: 11, letterSpacing: 1.3, fontWeight: '700' },
   focusTitle: {
     color: 'white',
     fontSize: 29,

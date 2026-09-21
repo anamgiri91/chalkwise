@@ -28,7 +28,7 @@ export function AppIcon({
   color?: string;
 }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
       <Path
         d={paths[name]}
         fill="none"
