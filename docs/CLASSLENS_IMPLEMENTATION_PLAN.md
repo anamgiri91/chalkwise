@@ -1,5 +1,11 @@
 # ClassLens Evolution — Full Implementation Plan (≤20 Users)
 
+> **September 2026 architecture update:** The user has requested an AWS-deployable
+> replacement for Supabase, a UI redesign, meaningful study workflows, tests and
+> local commits at each step. [The full-stack delivery plan](architecture/FULL_STACK_PLAN.md)
+> governs that work. Supabase-specific hosting and migration instructions below are
+> historical context and must not be applied to the new PostgreSQL backend.
+
 > **Authoritative project plan.** Build incrementally for 10–20 users, preserve working behavior, and avoid premature deployment-scale infrastructure. Use `expo-background-task` for background resume work; `expo-background-fetch` is deprecated.
 
 Same vision, same features, and same depth as the original analysis. Every feature ships. No over-engineering for scale we don't have yet.
