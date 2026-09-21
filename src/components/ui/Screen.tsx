@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBottomNav } from '@/components/AppBottomNav';
-import { MaxContentWidth, SidebarBreakpoint } from '@/constants/theme';
+import { MaxContentWidth, SidebarBreakpoint, SidebarExpandedBreakpoint } from '@/constants/theme';
+import { useSidebarMode } from '@/features/navigation/sidebar';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = PropsWithChildren<{
@@ -31,14 +32,18 @@ export function Screen({
   const theme = useTheme();
   const headerHeight = useHeaderHeight();
   const { width } = useWindowDimensions();
+  const sidebarMode = useSidebarMode();
   const sidebar = showBottomNav && width >= SidebarBreakpoint;
+  // Laptops get the rail by default; the full sidebar needs room it does not have.
+  const rail =
+    sidebarMode === 'collapsed' || (sidebarMode === 'auto' && width < SidebarExpandedBreakpoint);
   const content = (
     <SafeAreaView
       edges={headerAbove ? ['left', 'right', 'bottom'] : ['top', 'left', 'right', 'bottom']}
       style={[styles.safe, { backgroundColor: theme.background }]}
     >
       <View style={styles.body}>
-        {sidebar ? <AppBottomNav vertical /> : null}
+        {sidebar ? <AppBottomNav vertical rail={rail} /> : null}
         <View style={styles.main}>
           <ScrollView
             showsVerticalScrollIndicator={false}

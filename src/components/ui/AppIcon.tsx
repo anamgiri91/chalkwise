@@ -15,6 +15,11 @@ const paths = {
   spark: 'm12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z',
   lock: 'M6 10V7a6 6 0 0 1 12 0v3M5 10h14v12H5ZM12 15v3',
   plus: 'M12 5v14M5 12h14',
+  close: 'm6 6 12 12M6 18 18 6',
+  file: 'M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h6',
+  chevron: 'm9 5 7 7-7 7',
+  grid: 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',
+  info: 'M22 12a10 10 0 1 0-20 0 10 10 0 0 0 20 0M12 11v6M12 7v1',
   eye: 'M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12m13 0a3 3 0 1 0-6 0 3 3 0 0 0 6 0',
 } as const;
 export type IconName = keyof typeof paths;

@@ -51,13 +51,21 @@ export const Spacing = {
 } as const;
 
 /** Tighter than the previous rounded cards; a workspace reads as panels, not pills. */
-export const Radius = { small: 6, medium: 8, large: 12, pill: 999 } as const;
+export const Radius = { small: 4, medium: 6, large: 8, pill: 999 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 760;
 /** Width at which the workspace switches from bottom navigation to a sidebar. */
 export const SidebarBreakpoint = 900;
-export const SidebarWidth = 236;
+export const SidebarWidth = 224;
+/** Collapsed icon rail, used below SidebarExpandedBreakpoint. */
+export const SidebarRailWidth = 56;
+/**
+ * Below this the sidebar collapses to the rail so laptops keep their content width.
+ * Chosen above the common Mac laptop widths (1280, 1440, 1512) so those default to
+ * the rail; 16-inch and external displays have room for the full sidebar.
+ */
+export const SidebarExpandedBreakpoint = 1600;
 
 // Semantic aliases retained for screens not yet migrated to the token set.
 // `paper` and `ink` MUST mirror Colors.light or dark-mode detection inverts.
