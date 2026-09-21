@@ -1,5 +1,36 @@
 # ClassLens Shared Contracts
 
+## AWS backend transition (September 2026)
+
+The approved full-stack redesign adds `EXPO_PUBLIC_DATA_MODE=api` alongside mock
+and the legacy Supabase adapter. In API mode screens still call services, and
+services call the authenticated Node API in `server/`. PostgreSQL (RDS-compatible),
+Cognito and private S3 replace the corresponding Supabase services. No remote
+database has been changed and the legacy contracts below still describe that
+adapter. See `docs/architecture/FULL_STACK_PLAN.md` for scope and verification gates.
+
+- Existing Course, Lecture, Material, Profile and AI result shapes are retained.
+- New shared types in `src/types/study.ts`: LectureReview, ReviewConfidence and
+  LectureSharing. Review confidence is a student report, not a mastery score.
+- API notes are private by default; authors explicitly share each notebook with
+  accepted friends enrolled in its course. This intentionally supersedes automatic
+  friendship-wide sharing for API mode. Copied notes and originals are independent.
+- Cognito requires email confirmation. Native refresh tokens use SecureStore;
+  web sessions remain in memory. Password reset and confirmation codes are supported.
+- Uploads use caller-retained UUIDs and pending/ready metadata intents. The server
+  validates size and format, hashes bytes and writes immutable S3 objects. Attachment
+  stays a staged-only operation. Signed URLs last five minutes in API mode.
+- API lecture creation requires an idempotency key. Client keys survive retries
+  while the process is alive; durable capture/resume across process death is not
+  implemented by this change. Do not claim it is.
+- The API uses a separate non-owner database login and transaction-local verified
+  user IDs for RLS. New schema scripts are reviewable under `server/migrations/`;
+  neither startup nor ordinary tests apply them.
+- Mock mode opens a populated demo workspace. Mock profile/enrollment changes are
+  in-memory only. Mock capture uploads and AI calls still reject, never fake success.
+
+The sections below are the preserved legacy Supabase implementation contracts.
+
 Read this file before frontend or backend work. These are the current contracts,
 not a request to implement future features. Discuss contract changes before editing.
 

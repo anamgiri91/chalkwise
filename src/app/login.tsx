@@ -8,7 +8,8 @@ import { PasswordField } from '@/components/ui/PasswordField';
 import { Screen } from '@/components/ui/Screen';
 import { Brand, Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { signIn } from '@/services/auth';
+import { signIn, supportsEmailCode } from '@/services/auth';
+import { AppButton } from '@/components/ui/AppButton';
 
 export default function LoginScreen() {
   const theme = useTheme();
@@ -102,6 +103,8 @@ export default function LoginScreen() {
           {error}
         </ThemedText>
       ) : null}
+
+      {supportsEmailCode() ? <AppButton secondary title="Password or confirmation help" onPress={() => router.push('/account-help')} /> : null}
 
       <Pressable
         accessibilityRole="button"

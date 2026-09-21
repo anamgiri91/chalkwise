@@ -1,9 +1,11 @@
 import { getDataMode } from '@/lib/dataMode';
+import { apiRequest } from '@/lib/api';
+import { mockCourses } from '@/features/courses/mockData';
 import { getCourse, getCourses } from '@/services/courses';
 import type { Course } from '@/types';
 
 /** Mock mode has one demo user; enrollment starts empty and resets on reload. */
-const mockEnrollments = new Set<string>();
+const mockEnrollments = new Set<string>(mockCourses.map(course => course.id));
 const enrollmentListeners = new Set<() => void>();
 
 /** Lets the route gate re-check enrollment immediately after a change. */
@@ -33,6 +35,7 @@ function requireCourseId(courseId: string): string {
 
 /** Enrolled courses only. getCourses() continues to return the global catalog. */
 export async function getMyEnrolledCourses(): Promise<Course[]> {
+  if (getDataMode() === 'api') return apiRequest('/enrollments');
   if (getDataMode() === 'mock') {
     return (await getCourses())
       .filter((course) => mockEnrollments.has(course.id))
@@ -55,6 +58,10 @@ export async function getMyEnrolledCourses(): Promise<Course[]> {
 
 /** Repeated enrollment preserves the original membership and joined_at. */
 export async function enrollInCourse(courseId: string): Promise<void> {
+  if (getDataMode() === 'api') {
+    await apiRequest(`/enrollments/${encodeURIComponent(requireCourseId(courseId))}`, { method: 'PUT' });
+    notifyEnrollmentChange(); return;
+  }
   const id = requireCourseId(courseId);
   if (getDataMode() === 'mock') {
     if (!(await getCourse(id))) throw new Error('Course not found.');
@@ -78,6 +85,10 @@ export async function enrollInCourse(courseId: string): Promise<void> {
 
 /** Removing an absent membership is a no-op; the catalog course is never deleted. */
 export async function unenrollFromCourse(courseId: string): Promise<void> {
+  if (getDataMode() === 'api') {
+    await apiRequest(`/enrollments/${encodeURIComponent(requireCourseId(courseId))}`, { method: 'DELETE' });
+    notifyEnrollmentChange(); return;
+  }
   const id = requireCourseId(courseId);
   if (getDataMode() === 'mock') {
     mockEnrollments.delete(id);
@@ -98,6 +109,7 @@ export async function unenrollFromCourse(courseId: string): Promise<void> {
 
 /** Supabase mode requires a session, so signed-out state is not mistaken for no enrollment. */
 export async function hasEnrolledCourses(): Promise<boolean> {
+  if (getDataMode() === 'api') return (await getMyEnrolledCourses()).length > 0;
   if (getDataMode() === 'mock') return mockEnrollments.size > 0;
 
   const { supabase, userId } = await session();

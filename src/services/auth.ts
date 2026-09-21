@@ -1,8 +1,14 @@
 import { getDataMode } from '@/lib/dataMode';
+import { apiRequest } from '@/lib/api';
+import { apiSignIn, apiSignOut, apiSignUp, getApiSession, onApiAuthChange } from '@/lib/cognito';
+export { apiConfirmSignUp as confirmEmail, apiResendCode as resendConfirmationCode, apiForgotPassword as requestPasswordReset, apiResetPassword as resetPassword } from '@/lib/cognito';
+
+export const supportsEmailCode = () => getDataMode() === 'api';
 import type { Profile, ProfileInput } from '@/types';
 
 const profileColumns = 'id, name, year, major';
 const demoIdKey = 'classlens.demo-profile-id';
+let demoProfile: Profile = { id: 'demo-student', name: 'Alex Morgan', year: 'Junior', major: 'Computer Science' };
 
 function localStore(): { getItem(key: string): string | null; setItem(key: string, value: string): void } | null {
   const store = (globalThis as { localStorage?: { getItem(key: string): string | null; setItem(key: string, value: string): void } }).localStorage;
@@ -46,6 +52,8 @@ function requireSupabase(action: string) {
 
 /** Current user ID, or null when signed out. Never exposes auth fields. */
 export async function getCurrentUserId(): Promise<string | null> {
+  if (getDataMode() === 'api') return (await getApiSession())?.userId ?? null;
+  if (getDataMode() === 'mock') return demoProfile.id;
   if (getDataMode() !== 'supabase') return null;
   const { supabase } = await import('@/lib/supabase');
   const { data } = await supabase.auth.getSession();
@@ -54,6 +62,8 @@ export async function getCurrentUserId(): Promise<string | null> {
 
 /** Fires on sign in, sign out and token refresh so the app can re-gate. */
 export async function onAuthChange(listener: (userId: string | null) => void): Promise<() => void> {
+  if (getDataMode() === 'api') return onApiAuthChange(listener);
+  if (getDataMode() === 'mock') { listener(demoProfile.id); return () => {}; }
   if (getDataMode() !== 'supabase') {
     listener(null);
     return () => {};
@@ -70,6 +80,7 @@ export type SignUpResult = {
 };
 
 export async function signUp(email: string, password: string): Promise<SignUpResult> {
+  if (getDataMode() === 'api') return apiSignUp(email, password);
   requireSupabase('Sign up');
   const address = email.trim();
   if (!address) throw new Error('Email is required.');
@@ -82,6 +93,7 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
 }
 
 export async function signIn(email: string, password: string): Promise<void> {
+  if (getDataMode() === 'api') return apiSignIn(email, password);
   requireSupabase('Sign in');
   const address = email.trim();
   if (!address || !password) throw new Error('Email and password are required.');
@@ -92,6 +104,8 @@ export async function signIn(email: string, password: string): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  if (getDataMode() === 'api') return apiSignOut();
+  if (getDataMode() === 'mock') return;
   requireSupabase('Sign out');
   const { supabase } = await import('@/lib/supabase');
   const { error } = await supabase.auth.signOut();
@@ -100,6 +114,8 @@ export async function signOut(): Promise<void> {
 
 /** Null means onboarding has not been completed yet. */
 export async function getMyProfile(): Promise<Profile | null> {
+  if (getDataMode() === 'api') return apiRequest('/profile');
+  if (getDataMode() === 'mock') return { ...demoProfile };
   if (getDataMode() !== 'supabase') return null;
   const { supabase } = await import('@/lib/supabase');
   const id = await profileOwnerId();
@@ -117,6 +133,17 @@ export async function getMyProfile(): Promise<Profile | null> {
 
 /** Completes onboarding, and later edits. Writes only the signed-in user's row. */
 export async function saveMyProfile(input: ProfileInput): Promise<Profile> {
+  if (getDataMode() === 'api') {
+    const profile = await apiRequest<Profile>('/profile', { method: 'PUT', body: input });
+    profileListeners.forEach(listener => listener());
+    return profile;
+  }
+  if (getDataMode() === 'mock') {
+    if (!input.name.trim() || !input.major.trim()) throw new Error('Name and major are required.');
+    demoProfile = { ...input, id: demoProfile.id };
+    profileListeners.forEach(listener => listener());
+    return { ...demoProfile };
+  }
   requireSupabase('Saving your profile');
   const name = input.name.trim();
   const major = input.major.trim();

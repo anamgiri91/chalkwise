@@ -10,6 +10,9 @@ import {
 
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { ThemedText } from '@/components/themed-text';
+import { AppButton } from '@/components/ui/AppButton';
+import { signOut } from '@/services/auth';
 
 import { StatusBar } from 'expo-status-bar';
 
@@ -18,100 +21,56 @@ import { Brand } from '@/constants/theme';
 import { getCurrentUserId, getMyProfile, onAuthChange, onProfileChange } from '@/services/auth';
 import { hasEnrolledCourses, onEnrollmentChange } from '@/services/enrollment';
 
-const authRoutes = ['login', 'signup'];
+const authRoutes = ['login', 'signup', 'account-help'];
 
-/**
- * Session-based gate: signed out goes to login, signed in without a completed
- * profile goes to onboarding, and everyone else reaches the app. The session is
- * persisted by the Supabase client, so reopening the app does not ask again.
- */
 function useAuthGate() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
-  const [hasEnrollment, setHasEnrollment] = useState<boolean | null>(null);
-  const [ready, setReady] = useState(false);
+  const [state, setState] = useState<{ ready: boolean; userId: string | null; profile: boolean; enrollment: boolean; error: string | null }>({ ready: false, userId: null, profile: false, enrollment: false, error: null });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
-
+    let revision = 0;
     async function resolve(id: string | null) {
-      if (!id) {
-        if (active) {
-          setUserId(null);
-          setHasProfile(null);
-          setHasEnrollment(null);
-          setReady(true);
-        }
-        return;
-      }
-      let profile = null;
+      const current = ++revision;
       try {
-        profile = await getMyProfile();
-      } catch {
-        // Treat an unreadable profile as missing so onboarding can retry.
-      }
-      let enrollment: boolean | null = null;
-      if (profile) {
-        try {
-          enrollment = await hasEnrolledCourses();
-        } catch {
-          // Keep the gate in its loading state rather than misrouting on a failed read.
-        }
-      }
-      if (active) {
-        setUserId(id);
-        setHasProfile(profile !== null);
-        setHasEnrollment(enrollment);
-        setReady(true);
+        const profile = id ? await getMyProfile() : null;
+        const enrollment = profile ? await hasEnrolledCourses() : false;
+        if (active && current === revision) setState({ ready: true, userId: id, profile: !!profile, enrollment, error: null });
+      } catch (error) {
+        if (active && current === revision) setState(value => ({ ...value, ready: true, error: error instanceof Error ? error.message : 'Could not open your workspace.' }));
       }
     }
-
-    void getCurrentUserId().then(resolve);
-
-    // Onboarding saves through the service, so re-resolve to release the gate.
-    const stopProfileWatch = onProfileChange(() => {
-      void getCurrentUserId().then(resolve);
-    });
-    const stopEnrollmentWatch = onEnrollmentChange(() => {
-      void getCurrentUserId().then(resolve);
-    });
-
-    let unsubscribe: (() => void) | undefined;
-    void onAuthChange((id) => { void resolve(id); }).then((off) => {
-      if (active) unsubscribe = off; else off();
-    });
-
-    return () => { active = false; stopProfileWatch(); stopEnrollmentWatch(); unsubscribe?.(); };
-  }, []);
+    const refresh = () => {
+      void getCurrentUserId().then(resolve).catch(error => {
+        if (active) setState(value => ({ ...value, ready: true, error: error instanceof Error ? error.message : 'Could not check your session.' }));
+      });
+    };
+    refresh();
+    const stopProfile = onProfileChange(refresh);
+    const stopEnrollment = onEnrollmentChange(refresh);
+    let stopAuth: (() => void) | undefined;
+    void onAuthChange(id => { void resolve(id); }).then(off => { if (active) stopAuth = off; else off(); }).catch(() => {});
+    return () => { active = false; revision++; stopProfile(); stopEnrollment(); stopAuth?.(); };
+  }, [attempt]);
 
   useEffect(() => {
-    // Routing before the navigator mounts throws, so wait for both.
-    if (!ready || !navigationState?.key) return;
-
+    if (!state.ready || state.error || !navigationState?.key) return;
     const section: string = segments[0] ?? '';
     const inAuth = authRoutes.includes(section);
-    const inOnboarding = section === 'onboarding';
-    const inCourseOnboarding = section === 'course-onboarding';
+    if (!state.userId) { if (!inAuth) router.replace('/login'); }
+    else if (!state.profile) { if (section !== 'onboarding') router.replace('/onboarding'); }
+    else if (!state.enrollment) { if (section !== 'course-onboarding') router.replace('/course-onboarding'); }
+    else if (inAuth || section === 'onboarding' || section === 'course-onboarding') router.replace('/');
+  }, [state, segments, navigationState?.key]);
 
-    if (!userId) {
-      if (!inAuth) router.replace('/login');
-    } else if (hasProfile === false) {
-      if (!inOnboarding) router.replace('/onboarding');
-    } else if (hasEnrollment === false) {
-      if (!inCourseOnboarding) router.replace('/course-onboarding' as never);
-    } else if (hasEnrollment === true && (inAuth || inOnboarding || inCourseOnboarding)) {
-      router.replace('/');
-    }
-  }, [ready, userId, hasProfile, hasEnrollment, segments, navigationState?.key]);
-
-  return ready;
+  return { ...state, retry: () => { setState(value => ({ ...value, ready: false, error: null })); setAttempt(value => value + 1); } };
 }
 
 export default function RootLayout() {
   const theme = useTheme();
-  const ready = useAuthGate();
+  const gate = useAuthGate();
   const dark = theme.background !== Brand.paper;
   const navigationTheme = dark ? DarkTheme : DefaultTheme;
 
@@ -129,12 +88,6 @@ export default function RootLayout() {
       }}
     >
       <StatusBar style={dark ? 'light' : 'dark'} />
-
-      {ready ? null : (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.background }}>
-          <ActivityIndicator color={theme.text} accessibilityLabel="Opening ClassLens" />
-        </View>
-      )}
 
       <Stack
         screenOptions={{
@@ -229,6 +182,16 @@ export default function RootLayout() {
           }}
         />
       </Stack>
+      {!gate.ready || gate.error ? (
+        <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 20, backgroundColor: theme.background }}>
+          {gate.error ? <>
+            <ThemedText type="subtitle">Your workspace is safe</ThemedText>
+            <ThemedText accessibilityRole="alert">{gate.error}</ThemedText>
+            <AppButton title="Try again" onPress={gate.retry} />
+            <AppButton secondary title="Return to sign in" onPress={() => { void signOut().catch(gate.retry); }} />
+          </> : <ActivityIndicator color={theme.text} accessibilityLabel="Opening ClassLens" />}
+        </View>
+      ) : null}
     </ThemeProvider>
   );
 }

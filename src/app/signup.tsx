@@ -9,7 +9,7 @@ import { PasswordField } from '@/components/ui/PasswordField';
 import { Screen } from '@/components/ui/Screen';
 import { Brand, Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { signUp } from '@/services/auth';
+import { signUp, supportsEmailCode, confirmEmail, resendConfirmationCode } from '@/services/auth';
 
 export default function SignupScreen() {
   const theme = useTheme();
@@ -20,6 +20,24 @@ export default function SignupScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const [confirmationMessage, setConfirmationMessage] = useState('');
+
+  async function confirm() {
+    if (!confirmationEmail || busy) return;
+    setBusy(true); setError('');
+    try { await confirmEmail(confirmationEmail, code); router.replace('/login'); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not confirm your email.'); }
+    finally { setBusy(false); }
+  }
+
+  async function resend() {
+    if (!confirmationEmail || busy) return;
+    setBusy(true); setError('');
+    try { await resendConfirmationCode(confirmationEmail); setConfirmationMessage('A new code is on its way.'); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not resend the code.'); }
+    finally { setBusy(false); }
+  }
 
   const ready = email.trim().length > 0 && password.length > 0;
 
@@ -57,11 +75,18 @@ export default function SignupScreen() {
             Check your email
           </ThemedText>
           <ThemedText themeColor="textSecondary">
-            We sent a confirmation link to your TXST email, {confirmationEmail}. Open the link to activate your account, then sign in.
+            {supportsEmailCode() ? `Enter the confirmation code sent to ${confirmationEmail}.` : `Open the confirmation link sent to ${confirmationEmail}, then sign in.`}
           </ThemedText>
         </View>
 
-        <AppButton title="Go to sign in" onPress={() => router.replace('/login')} />
+        {supportsEmailCode() ? <>
+          <TextInput value={code} onChangeText={setCode} editable={!busy} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="one-time-code" accessibilityLabel="Email confirmation code" placeholder="Confirmation code" placeholderTextColor={theme.textSecondary} style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]} />
+          <AppButton title={busy ? 'Please wait…' : 'Confirm email'} disabled={busy || !code.trim()} onPress={confirm} />
+          <AppButton secondary title="Send another code" disabled={busy} onPress={resend} />
+        </> : null}
+        {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
+        {confirmationMessage ? <ThemedText accessibilityLiveRegion="polite">{confirmationMessage}</ThemedText> : null}
+        <AppButton title="Go to sign in" secondary onPress={() => router.replace('/login')} />
       </Screen>
     );
   }
@@ -116,7 +141,7 @@ export default function SignupScreen() {
           value={password}
           onChangeText={setPassword}
           editable={!busy}
-          placeholder="At least 6 characters"
+          placeholder={supportsEmailCode() ? 'At least 12 characters' : 'At least 6 characters'}
           placeholderTextColor={theme.textSecondary}
           autoCapitalize="none"
           textContentType="newPassword"

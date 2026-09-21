@@ -1,5 +1,6 @@
 import { mockCourses } from '@/features/courses/mockData';
 import { getDataMode } from '@/lib/dataMode';
+import { apiRequest } from '@/lib/api';
 import type { Course, CreateCourseInput } from '@/types';
 
 const courseColumns = 'id, code, name, professor';
@@ -13,6 +14,7 @@ function slugify(value: string): string {
 }
 
 export async function getCourses(): Promise<Course[]> {
+  if (getDataMode() === 'api') return apiRequest('/courses');
   if (getDataMode() === 'mock') {
     return courses.map((course) => ({ ...course }));
   }
@@ -29,6 +31,7 @@ export async function getCourses(): Promise<Course[]> {
 }
 
 export async function getCourse(id: string): Promise<Course | null> {
+  if (getDataMode() === 'api') return apiRequest(`/courses/${encodeURIComponent(id)}`);
   if (getDataMode() === 'mock') {
     const course = courses.find((item) => item.id === id);
     return course ? { ...course } : null;
@@ -51,6 +54,7 @@ export async function getCourse(id: string): Promise<Course | null> {
  * rather than failing, so a retry cannot produce a duplicate or an error.
  */
 export async function createCourse(input: CreateCourseInput): Promise<Course> {
+  if (getDataMode() === 'api') return apiRequest('/courses', { method: 'POST', body: input });
   const code = input.code.trim();
   const name = input.name.trim();
   const professor = input.professor.trim();

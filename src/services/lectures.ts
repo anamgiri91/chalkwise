@@ -1,5 +1,7 @@
 import { mockLectures } from '@/features/lectures/mockData';
 import { getDataMode } from '@/lib/dataMode';
+import { apiRequest } from '@/lib/api';
+import { getApiSession } from '@/lib/cognito';
 import type { CreateLectureInput, Lecture } from '@/types';
 import { getCourse } from './courses';
 
@@ -38,8 +40,10 @@ function copy(lecture: Lecture): Lecture {
 
 const lectures = mockLectures.map(copy);
 let nextId = 1;
+const apiSaveKeys = new Map<string, string>();
 
 export async function getLectures(courseId: string): Promise<Lecture[]> {
+  if (getDataMode() === 'api') return apiRequest(`/lectures?courseId=${encodeURIComponent(courseId)}`);
   if (getDataMode() === 'mock') {
     return lectures.filter((lecture) => lecture.courseId === courseId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id))
@@ -60,6 +64,7 @@ export async function getLectures(courseId: string): Promise<Lecture[]> {
 }
 
 export async function getLecture(id: string): Promise<Lecture | null> {
+  if (getDataMode() === 'api') return apiRequest(`/lectures/${encodeURIComponent(id)}`);
   if (getDataMode() === 'mock') {
     const lecture = lectures.find((item) => item.id === id);
     return lecture ? copy(lecture) : null;
@@ -79,6 +84,17 @@ export async function getLecture(id: string): Promise<Lecture | null> {
 
 /** Persist in Supabase mode; keep the local demo independent in mock mode. */
 export async function createLecture(input: CreateLectureInput): Promise<Lecture> {
+  if (getDataMode() === 'api') {
+    const session = await getApiSession();
+    if (!session) throw new Error('Sign in to save a notebook.');
+    const signature = `${session.userId}:${JSON.stringify(input)}`;
+    const { randomUUID } = await import('expo-crypto');
+    const key = apiSaveKeys.get(signature) ?? randomUUID();
+    apiSaveKeys.set(signature, key);
+    const lecture = await apiRequest<Lecture>('/lectures', { method: 'POST', body: input, idempotencyKey: key });
+    apiSaveKeys.delete(signature);
+    return lecture;
+  }
   if (!(await getCourse(input.courseId))) throw new Error('Course not found.');
   if (getDataMode() === 'mock') {
     const lecture = copy({ ...input, id: `local-lecture-${nextId++}`, createdAt: new Date().toISOString() });
@@ -108,6 +124,7 @@ export type SharedLecture = Lecture & { ownerId: string };
 
 /** Catch Up: lectures shared by the given classmates, newest first. */
 export async function getLecturesByOwners(ownerIds: string[]): Promise<SharedLecture[]> {
+  if (getDataMode() === 'api') return ownerIds.length ? apiRequest(`/shared-lectures?owners=${encodeURIComponent(ownerIds.slice(0, 40).join(','))}`) : [];
   if (getDataMode() !== 'supabase' || !ownerIds.length) return [];
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase
@@ -123,6 +140,10 @@ export async function getLecturesByOwners(ownerIds: string[]): Promise<SharedLec
 
 /** Copy saved analysis and real captures; retries resume the same user's copy. */
 export async function copyLectureToMyNotes(lectureId: string, courseId?: string): Promise<Lecture> {
+  if (getDataMode() === 'api') {
+    if (courseId && (await getLecture(lectureId))?.courseId !== courseId) throw new Error('Shared notes must stay in their matching course.');
+    return apiRequest(`/lectures/${encodeURIComponent(lectureId)}/copy`, { method: 'POST' });
+  }
   if (getDataMode() !== 'supabase') throw new Error('Catch Up requires EXPO_PUBLIC_DATA_MODE=supabase.');
   const { supabase } = await import('@/lib/supabase');
   const { copyLectureMaterials } = await import('./materials');

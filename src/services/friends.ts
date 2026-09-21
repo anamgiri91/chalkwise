@@ -1,7 +1,11 @@
 import { getDataMode } from '@/lib/dataMode';
+import { apiRequest } from '@/lib/api';
 import type { FriendRequest, Profile } from '@/types';
 
 const profileColumns = 'id, name, year, major, is_demo';
+type ApiFriendship = { id: string; status: 'pending' | 'accepted'; incoming: boolean; profileId: string; name: string; year: Profile['year']; major: string };
+const apiFriendships = () => apiRequest<ApiFriendship[]>('/friendships');
+const apiProfile = (row: ApiFriendship): Profile => ({ id: row.profileId, name: row.name, year: row.year, major: row.major });
 
 function requireSupabase(action: string) {
   if (getDataMode() !== 'supabase') {
@@ -41,6 +45,7 @@ type FriendshipRow = {
  * auth.users, which is deliberately not exposed to clients.
  */
 export async function searchProfiles(query: string): Promise<Profile[]> {
+  if (getDataMode() === 'api') return query.trim().length < 2 ? [] : apiRequest(`/profiles?q=${encodeURIComponent(query.trim())}`);
   requireSupabase('Finding classmates');
   const term = query.trim();
   if (term.length < 2) return [];
@@ -87,6 +92,7 @@ async function profilesByIds(ids: string[]): Promise<Map<string, Profile>> {
 
 /** Accepted friends only. This is what Catch Up lists. */
 export async function getFriends(): Promise<Profile[]> {
+  if (getDataMode() === 'api') return (await apiFriendships()).filter(row => row.status === 'accepted').map(apiProfile);
   if (getDataMode() !== 'supabase') return [];
   const { rows, id } = await myFriendships();
   const accepted = rows.filter((row) => row.status === 'accepted');
@@ -100,6 +106,7 @@ export async function getFriends(): Promise<Profile[]> {
 
 /** Pending requests addressed to the signed-in user, waiting to be accepted. */
 export async function getIncomingRequests(): Promise<FriendRequest[]> {
+  if (getDataMode() === 'api') return (await apiFriendships()).filter(row => row.incoming && row.status === 'pending').map(row => ({ id: row.id, from: apiProfile(row) }));
   if (getDataMode() !== 'supabase') return [];
   const { rows, id } = await myFriendships();
   const incoming = rows.filter((row) => row.status === 'pending' && row.addressee_id === id);
@@ -114,6 +121,7 @@ export async function getIncomingRequests(): Promise<FriendRequest[]> {
 
 /** IDs already requested or accepted, so the UI can show Pending or Friends. */
 export async function getFriendshipStates(): Promise<Map<string, 'pending' | 'accepted'>> {
+  if (getDataMode() === 'api') return new Map((await apiFriendships()).map(row => [row.profileId, row.status]));
   if (getDataMode() !== 'supabase') return new Map();
   const { rows, id } = await myFriendships();
   return new Map(
@@ -122,6 +130,7 @@ export async function getFriendshipStates(): Promise<Map<string, 'pending' | 'ac
 }
 
 export async function sendFriendRequest(addresseeId: string): Promise<void> {
+  if (getDataMode() === 'api') return apiRequest('/friendships', { method: 'POST', body: { addresseeId } });
   requireSupabase('Sending a friend request');
   const { supabase, id } = await session();
   if (addresseeId === id) throw new Error('You cannot add yourself.');
@@ -140,6 +149,7 @@ export async function sendFriendRequest(addresseeId: string): Promise<void> {
 
 /** Only the addressee can accept, enforced by the update policy. */
 export async function acceptFriendRequest(friendshipId: string): Promise<void> {
+  if (getDataMode() === 'api') return apiRequest(`/friendships/${encodeURIComponent(friendshipId)}/accept`, { method: 'PUT' });
   requireSupabase('Accepting a friend request');
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase
@@ -161,6 +171,7 @@ export async function acceptFriendRequest(friendshipId: string): Promise<void> {
  * Real requests still go through sendFriendRequest and a real acceptance.
  */
 export async function acceptDemoFriendship(demoProfileId: string): Promise<void> {
+  if (getDataMode() === 'api') throw new Error('Demo classmates are only available in the legacy demo. Real classmates must accept your request.');
   requireSupabase('Adding the demo classmate');
   const { supabase } = await session();
   const { error } = await supabase.rpc('accept_demo_friendship', { demo_id: demoProfileId });
@@ -169,6 +180,7 @@ export async function acceptDemoFriendship(demoProfileId: string): Promise<void>
 
 /** Read one profile without needing a session, for the signed-out demo path. */
 export async function getProfileById(id: string): Promise<Profile | null> {
+  if (getDataMode() === 'api') return apiRequest(`/profiles/${encodeURIComponent(id)}`);
   if (getDataMode() !== 'supabase' || !id.trim()) return null;
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase

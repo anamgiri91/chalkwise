@@ -3,9 +3,11 @@ import { parseAskLectureInput, parseAskLectureResult } from '@/lib/askLecture';
 import type { LectureAnalysis, Material, GenerateQuizResult, AskLectureResult } from '@/types';
 
 import { getDataMode } from '@/lib/dataMode';
+import { apiRequest } from '@/lib/api';
 import { parseLectureAnalysis } from '@/lib/lectureAnalysis';
 
 export async function analyzeMaterial(material: Material): Promise<LectureAnalysis> {
+  if (getDataMode() === 'api') return parseLectureAnalysis(await apiRequest('/ai/analyze', { method: 'POST', body: { materialId: material.id } }));
   if (getDataMode() !== 'supabase') throw new Error('Analysis requires EXPO_PUBLIC_DATA_MODE=supabase.');
   if (material.type !== 'photo') throw new Error('Only photos can be analyzed.');
   const { supabase } = await import('@/lib/supabase');
@@ -25,6 +27,7 @@ export async function analyzeMaterial(material: Material): Promise<LectureAnalys
 
 export async function askLecture(lectureId: string, question: string): Promise<AskLectureResult> {
   const body = parseAskLectureInput(lectureId, question);
+  if (getDataMode() === 'api') return parseAskLectureResult(await apiRequest('/ai/ask', { method: 'POST', body }));
   if (getDataMode() !== 'supabase') throw new Error('Lecture Q&A requires EXPO_PUBLIC_DATA_MODE=supabase.');
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase.functions.invoke('ask-lecture', { body });
@@ -43,6 +46,7 @@ export async function askLecture(lectureId: string, question: string): Promise<A
 
 export async function generateQuiz(lectureId: string): Promise<GenerateQuizResult> {
   const body = parseQuizInput(lectureId);
+  if (getDataMode() === 'api') return parseQuizResult(await apiRequest('/ai/quiz', { method: 'POST', body }));
   if (getDataMode() !== 'supabase') throw new Error('Quiz generation requires EXPO_PUBLIC_DATA_MODE=supabase.');
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase.functions.invoke('generate-quiz', { body });

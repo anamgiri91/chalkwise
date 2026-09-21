@@ -5,3 +5,4 @@ export type { AskLectureResult } from './askLecture';
 export type { QuizQuestion, GenerateQuizResult } from './quiz';
 export type { Year, Profile, ProfileInput, FriendRequest } from './social';
 export { years } from './social';
+export type { LectureReview, LectureSharing, ReviewConfidence } from './study';

@@ -1,5 +1,7 @@
 import type { Material, MaterialUploadInput } from '@/types';
 import { getDataMode } from '@/lib/dataMode';
+import { apiRequest } from '@/lib/api';
+import { uploadApiMaterial } from './api/materials';
 
 const bucketName = 'lecture-materials';
 const maxPhotoBytes = 10 * 1024 * 1024;
@@ -34,6 +36,7 @@ function reason(error: unknown): string {
 }
 
 export async function uploadMaterial(input: MaterialUploadInput): Promise<Material> {
+  if (getDataMode() === 'api') return uploadApiMaterial(input);
   if (getDataMode() !== 'supabase') {
     throw new Error('Photo upload requires EXPO_PUBLIC_DATA_MODE=supabase. Mock uploads are not implemented.');
   }
@@ -110,6 +113,7 @@ export async function attachMaterialToLecture(
   materialId: string,
   lectureId: string,
 ): Promise<Material> {
+  if (getDataMode() === 'api') return apiRequest(`/materials/${encodeURIComponent(materialId)}/lecture`, { method: 'PUT', body: { lectureId } });
   if (getDataMode() !== 'supabase') throw new Error('Material attachment requires EXPO_PUBLIC_DATA_MODE=supabase.');
   if (!materialId.trim() || !lectureId.trim()) throw new Error('Material and lecture IDs are required.');
   const { supabase } = await import('@/lib/supabase');
@@ -128,6 +132,7 @@ export async function attachMaterialToLecture(
 
 /** Original captures attached to a lecture, oldest first. */
 export async function getMaterials(lectureId: string): Promise<Material[]> {
+  if (getDataMode() === 'api') return apiRequest(`/materials?lectureId=${encodeURIComponent(lectureId)}`);
   // Mock mode has no uploads, so a lecture there never has originals.
   if (getDataMode() !== 'supabase' || !lectureId.trim()) return [];
   const { supabase } = await import('@/lib/supabase');
@@ -144,6 +149,10 @@ export async function getMaterials(lectureId: string): Promise<Material[]> {
  * degrades to a placeholder instead of failing the whole lecture screen.
  */
 export async function getMaterialUrl(material: Material, expiresInSeconds = 3600): Promise<string | null> {
+  if (getDataMode() === 'api') {
+    try { return (await apiRequest<{ url: string }>(`/materials/${encodeURIComponent(material.id)}/url`)).url; }
+    catch { return null; }
+  }
   if (getDataMode() !== 'supabase' || !material.filePath.trim()) return null;
   try {
     const { supabase } = await import('@/lib/supabase');
@@ -160,6 +169,7 @@ export async function getMaterialUrl(material: Material, expiresInSeconds = 3600
 /** Copy actual photo objects using existing staged-material grants. Deterministic
  * IDs let retries finish a partial copy without inserting another notebook/photo. */
 export async function copyLectureMaterials(sourceId: string, targetId: string): Promise<void> {
+  if (getDataMode() === 'api') throw new Error('Copy the notebook through copyLectureToMyNotes so originals are saved together.');
   const originals = await getMaterials(sourceId);
   if (originals.some((material) => material.type !== 'photo')) {
     throw new Error('Only photo material copies are supported.');
