@@ -30,6 +30,8 @@ const paths = [
   'src/components/AppBottomNav.tsx',
   'src/components/StudyActions.tsx',
   'src/components/ui/AppIcon.tsx',
+  'src/components/ui/DataRow.tsx',
+  'src/app/course/[id].tsx',
   'src/components/ui/Screen.tsx',
   'src/components/ui/AppCard.tsx',
   'src/components/ui/AppButton.tsx',

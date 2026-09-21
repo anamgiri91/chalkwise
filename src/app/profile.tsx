@@ -1,17 +1,14 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { Pressable, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
-import { Screen } from '@/components/ui/Screen';
-import { AppCard } from '@/components/ui/AppCard';
-import { AppButton } from '@/components/ui/AppButton';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { EmptyState, StatusBadge } from '@/components/ui/Editorial';
-import { getInitials } from '@/features/profile/initials';
+import { Row, RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { Screen } from '@/components/ui/Screen';
+import { Radius } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getMyProfile, saveMyProfile, signOut } from '@/services/auth';
 import { getWorkspaceCapabilities } from '@/services/study';
-import { useTheme } from '@/hooks/use-theme';
-import { Brand } from '@/constants/theme';
 import { years, type Profile, type Year } from '@/types';
 
 export default function ProfileScreen() {
@@ -78,171 +75,315 @@ export default function ProfileScreen() {
       setBusy(false);
     }
   }
-  const field = {
-    backgroundColor: theme.background,
-    color: theme.text,
-    padding: 14,
-    borderRadius: 10,
-    minHeight: 50,
-    fontSize: 16,
-  };
+  const first = loading && !profile;
+  const incomplete = !name.trim() || !major.trim();
+  const inputStyle = [
+    styles.input,
+    { color: theme.text, borderColor: theme.border, backgroundColor: theme.background },
+  ];
   return (
     <Screen showBottomNav avoidKeyboard>
-      <StatusBadge label="YOUR ACCOUNT" />
-      <View style={{ flexDirection: 'row', gap: 18, alignItems: 'center' }}>
-        <View
-          style={{
-            width: 68,
-            height: 68,
-            backgroundColor: Brand.accent,
-            borderRadius: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <ThemedText style={{ color: 'white', fontSize: 22, fontWeight: '700' }}>
-            {getInitials(profile?.name ?? 'Student')}
-          </ThemedText>
-        </View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <ThemedText type="title" style={{ fontSize: 30, lineHeight: 38 }}>
-            {profile?.name ?? 'Your profile'}
-          </ThemedText>
-          <ThemedText themeColor="textSecondary">A workspace that feels like yours.</ThemedText>
-        </View>
-      </View>
-      {error ? (
-        <EmptyState
-          title="Something needs another try"
-          description={error}
-          action="Reload profile"
-          onPress={() => setAttempt((x) => x + 1)}
-        />
-      ) : null}
-      {loading ? (
-        <EmptyState
-          loading
-          title="Loading your profile"
-          description="Getting your academic details."
-        />
-      ) : (
-        <AppCard>
-          <ThemedText type="subtitle" style={{ fontSize: 22, lineHeight: 30 }}>
-            Academic profile
-          </ThemedText>
-          {editing ? (
+      <Toolbar
+        title="Profile"
+        actions={
+          first ? undefined : editing ? (
             <>
-              <ThemedText type="smallBold">Name</ThemedText>
-              <TextInput
-                style={field}
-                value={name}
-                onChangeText={setName}
-                editable={!busy}
-                autoComplete="name"
-                accessibilityLabel="Your name"
-                maxLength={100}
-              />
-              <ThemedText type="smallBold">Year</ThemedText>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {years.map((value) => (
-                  <Pressable
-                    key={value}
-                    accessibilityRole="radio"
-                    accessibilityLabel={value}
-                    accessibilityState={{ checked: year === value, disabled: busy }}
-                    disabled={busy}
-                    onPress={() => setYear(value)}
-                    style={{
-                      padding: 12,
-                      borderRadius: 10,
-                      minHeight: 48,
-                      justifyContent: 'center',
-                      backgroundColor: year === value ? theme.backgroundSelected : theme.background,
-                    }}
-                  >
-                    <ThemedText type="small">{value}</ThemedText>
-                  </Pressable>
-                ))}
-              </View>
-              <ThemedText type="smallBold">Major or program</ThemedText>
-              <TextInput
-                style={field}
-                value={major}
-                onChangeText={setMajor}
-                editable={!busy}
-                accessibilityLabel="Major or program"
-                maxLength={160}
-              />
-              <AppButton
-                title={busy ? 'Saving…' : 'Save profile'}
-                disabled={busy || !name.trim() || !major.trim()}
-                onPress={save}
-              />
-              <AppButton
-                secondary
-                title="Cancel"
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cancel editing"
+                accessibilityState={{ disabled: busy }}
                 disabled={busy}
                 onPress={() => setEditing(false)}
-              />
+                style={({ pressed, hovered }) => [
+                  styles.secondary,
+                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                  (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+                  busy && styles.dim,
+                ]}
+              >
+                <ThemedText style={styles.secondaryLabel}>Cancel</ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Save profile"
+                accessibilityState={{ disabled: busy || incomplete, busy }}
+                disabled={busy || incomplete}
+                onPress={() => void save()}
+                style={({ pressed, hovered }) => [
+                  styles.primary,
+                  { backgroundColor: theme.accent },
+                  (pressed || hovered || busy || incomplete) && styles.dim,
+                ]}
+              >
+                <AppIcon name="check" size={14} color={theme.accentText} />
+                <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
+                  {busy ? 'Saving…' : 'Save'}
+                </ThemedText>
+              </Pressable>
             </>
           ) : (
-            <>
-              <ThemedText>
-                {profile?.year} · {profile?.major}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+              onPress={() => {
+                setName(profile?.name ?? '');
+                setMajor(profile?.major ?? '');
+                setYear(profile?.year ?? 'Freshman');
+                setEditing(true);
+                setSaved(false);
+              }}
+              style={({ pressed, hovered }) => [
+                styles.primary,
+                { backgroundColor: theme.accent },
+                (pressed || hovered) && styles.dim,
+              ]}
+            >
+              <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
+                Edit
               </ThemedText>
-              <AppButton
-                secondary
-                title="Edit profile"
-                onPress={() => {
-                  setName(profile?.name ?? '');
-                  setMajor(profile?.major ?? '');
-                  setYear(profile?.year ?? 'Freshman');
-                  setEditing(true);
-                  setSaved(false);
-                }}
-              />
-            </>
-          )}
+            </Pressable>
+          )
+        }
+      />
+
+      {error ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${error} Try again.`}
+          accessibilityLiveRegion="polite"
+          onPress={() => setAttempt((x) => x + 1)}
+          style={[styles.notice, { borderColor: theme.border }]}
+        >
+          <ThemedText style={[styles.noticeText, { color: theme.danger }]}>{error}</ThemedText>
+          <ThemedText style={[styles.noticeText, { color: theme.accent }]}>Retry</ThemedText>
+        </Pressable>
+      ) : null}
+
+      {first ? (
+        <View style={styles.loading}>
+          <ActivityIndicator
+            color={theme.textSecondary}
+            accessibilityLabel="Loading your profile"
+          />
+        </View>
+      ) : (
+        <>
+          <Section label="Details">
+            {editing ? (
+              <View
+                style={[
+                  styles.panel,
+                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                ]}
+              >
+                <View style={styles.field}>
+                  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+                    Name
+                  </ThemedText>
+                  <TextInput
+                    style={inputStyle}
+                    value={name}
+                    onChangeText={setName}
+                    editable={!busy}
+                    autoComplete="name"
+                    accessibilityLabel="Your name"
+                    maxLength={100}
+                  />
+                </View>
+                <View style={styles.field}>
+                  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+                    Year
+                  </ThemedText>
+                  <View
+                    accessibilityRole="radiogroup"
+                    accessibilityLabel="Year"
+                    style={styles.chips}
+                  >
+                    {years.map((value) => {
+                      const active = year === value;
+                      return (
+                        <Pressable
+                          key={value}
+                          accessibilityRole="radio"
+                          accessibilityLabel={value}
+                          accessibilityState={{ checked: active, disabled: busy }}
+                          disabled={busy}
+                          hitSlop={6}
+                          onPress={() => setYear(value)}
+                          style={({ pressed, hovered }) => [
+                            styles.chip,
+                            {
+                              borderColor: active ? theme.borderStrong : theme.border,
+                              backgroundColor: active ? theme.backgroundSelected : theme.background,
+                            },
+                            !active &&
+                              (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+                          ]}
+                        >
+                          <ThemedText
+                            style={[
+                              styles.chipLabel,
+                              { color: active ? theme.text : theme.textSecondary },
+                            ]}
+                          >
+                            {value}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+                <View style={styles.field}>
+                  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+                    Major or program
+                  </ThemedText>
+                  <TextInput
+                    style={inputStyle}
+                    value={major}
+                    onChangeText={setMajor}
+                    editable={!busy}
+                    accessibilityLabel="Major or program"
+                    maxLength={160}
+                  />
+                </View>
+              </View>
+            ) : (
+              <RowGroup>
+                <Row first title="Name" meta={[profile?.name || '—']} />
+                <Row title="Year" meta={[profile?.year || '—']} />
+                <Row title="Major" meta={[profile?.major || '—']} />
+              </RowGroup>
+            )}
+          </Section>
+
           {saved ? (
-            <ThemedText accessibilityLiveRegion="polite" type="small">
+            <ThemedText
+              accessibilityLiveRegion="polite"
+              style={[styles.footnote, { color: theme.textSecondary }]}
+            >
               Profile saved{capabilities.mode === 'mock' ? ' for this demo session' : ''}.
             </ThemedText>
           ) : null}
-        </AppCard>
-      )}
-      <AppButton secondary title="Manage my courses" onPress={() => router.push('/courses')} />
-      <AppCard>
-        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <AppIcon name="lock" />
-          <ThemedText style={{ fontSize: 20, fontWeight: '600' }}>
-            Your material, your choice
-          </ThemedText>
-        </View>
-        <ThemedText themeColor="textSecondary">
-          {capabilities.mode === 'api'
-            ? 'Notebooks start private. Share individual notebooks with accepted friends in the same course, and turn sharing off whenever you want.'
-            : 'Your workspace uses ' +
-              (capabilities.mode === 'mock'
-                ? 'sample data. Nothing in this demo is uploaded.'
-                : 'the existing legacy sharing model.')}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Appearance follows your device's light or dark setting. Capture only material you have
-          permission to save and share.
-        </ThemedText>
-      </AppCard>
-      {capabilities.mode !== 'mock' ? (
-        <AppButton
-          secondary
-          title={busy ? 'Please wait…' : 'Sign out'}
-          disabled={busy}
-          onPress={leave}
-        />
-      ) : (
-        <ThemedText type="small" themeColor="textSecondary">
-          Demo workspace · No real account is signed in.
-        </ThemedText>
+
+          <Section label="Workspace">
+            <RowGroup>
+              <Row
+                first
+                title="Courses"
+                meta={['Join or leave']}
+                accessibilityHint="Opens your course list"
+                onPress={() => router.push('/courses')}
+              />
+            </RowGroup>
+          </Section>
+
+          <Section label="Sharing">
+            <View
+              style={[
+                styles.panel,
+                { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+              ]}
+            >
+              <ThemedText style={[styles.note, { color: theme.textSecondary }]}>
+                {capabilities.mode === 'api'
+                  ? 'Notebooks start private. Share a notebook with accepted friends in the same course, and turn sharing off at any time.'
+                  : capabilities.mode === 'mock'
+                    ? 'This workspace uses sample data. Nothing in the demo is uploaded.'
+                    : 'This workspace uses the existing legacy sharing model.'}
+              </ThemedText>
+              <ThemedText style={[styles.note, { color: theme.textTertiary }]}>
+                Appearance follows your device&apos;s light or dark setting. Capture only material
+                you have permission to save and share.
+              </ThemedText>
+            </View>
+          </Section>
+
+          <Section label="Account">
+            {capabilities.mode === 'mock' ? (
+              <RowGroup>
+                <Row first title="Demo workspace" meta={['No account signed in']} />
+              </RowGroup>
+            ) : (
+              <RowGroup>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign out"
+                  accessibilityState={{ disabled: busy, busy }}
+                  disabled={busy}
+                  onPress={() => void leave()}
+                  style={({ pressed, hovered }) => [
+                    styles.signOut,
+                    (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+                    busy && styles.dim,
+                  ]}
+                >
+                  <ThemedText style={[styles.signOutLabel, { color: theme.danger }]}>
+                    {busy ? 'Please wait…' : 'Sign out'}
+                  </ThemedText>
+                </Pressable>
+              </RowGroup>
+            )}
+          </Section>
+        </>
       )}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  primary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 30,
+    paddingHorizontal: 11,
+    borderRadius: Radius.medium,
+  },
+  primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  secondary: {
+    justifyContent: 'center',
+    height: 30,
+    paddingHorizontal: 11,
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+  },
+  secondaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  dim: { opacity: 0.85 },
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    minHeight: 36,
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+  },
+  noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
+  loading: { paddingVertical: 48, alignItems: 'center' },
+  panel: { gap: 14, padding: 14, borderWidth: 1, borderRadius: Radius.large },
+  field: { gap: 6 },
+  label: { fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
+  input: {
+    height: 34,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+    fontSize: 13.5,
+    outlineStyle: 'none',
+  } as object,
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: {
+    justifyContent: 'center',
+    height: 30,
+    paddingHorizontal: 11,
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+  },
+  chipLabel: { fontSize: 13, lineHeight: 18, fontWeight: '500' },
+  note: { fontSize: 12.5, lineHeight: 18 },
+  signOut: { justifyContent: 'center', minHeight: 44, paddingHorizontal: 14 },
+  signOutLabel: { fontSize: 13.5, lineHeight: 19, fontWeight: '600' },
+  footnote: { fontSize: 12, lineHeight: 16, marginTop: 4 },
+});

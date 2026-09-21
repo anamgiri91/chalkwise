@@ -1,49 +1,136 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
-import { EmptyState, SectionHeader, StatusBadge } from '@/components/ui/Editorial';
-import { LectureCard } from '@/components/LectureCard';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
-import { AppButton } from '@/components/ui/AppButton';
 import { Screen } from '@/components/ui/Screen';
+import { AppIcon } from '@/components/ui/AppIcon';
+import { Row, RowGroup, Section, Toolbar, since } from '@/components/ui/DataRow';
+import { Radius } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getCourse } from '@/services/courses';
 import { getLectures } from '@/services/lectures';
 import type { Course, Lecture } from '@/types';
 
 export default function CourseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const theme = useTheme();
   const [data, setData] = useState<{ course: Course | null; lectures: Lecture[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    setLoading(true);
-    setError(false);
-    Promise.all([getCourse(id), getLectures(id)]).then(([course, lectures]) => {
-      if (active) setData({ course, lectures });
-    }).catch(() => { if (active) setError(true); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  // Retry intentionally creates a new focused request even when the route is unchanged.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, attempt]));
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      setLoading(true);
+      setError(false);
+      Promise.all([getCourse(id), getLectures(id)])
+        .then(([course, lectures]) => {
+          if (active) setData({ course, lectures });
+        })
+        .catch(() => {
+          if (active) setError(true);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+      return () => {
+        active = false;
+      };
+      // Retry intentionally creates a new focused request even when the route is unchanged.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, attempt]),
+  );
 
-  if (loading) return <Screen><EmptyState loading title="Opening your notebook" description="Gathering the ideas from this course." /></Screen>;
-  if (error) return <Screen><EmptyState title="This notebook didn’t open" description="We couldn’t load this course. Please try again." action="Try again" onPress={() => setAttempt(value => value + 1)} /></Screen>;
-  if (!data?.course) return <Screen><EmptyState title="This page is missing" description="It may have moved or is no longer available. Your workspace is a good place to start." action="Go home" onPress={() => router.replace('/')} /></Screen>;
+  const capture = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Capture class material"
+      onPress={() => router.push('/capture')}
+      style={({ pressed, hovered }) => [
+        styles.primary,
+        { backgroundColor: theme.accent },
+        (pressed || hovered) && styles.dim,
+      ]}
+    >
+      <AppIcon name="plus" size={14} color={theme.accentText} />
+      <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>Capture</ThemedText>
+    </Pressable>
+  );
 
-  return <Screen>
-    <StatusBadge label={data.course.code} />
-    <View style={{ gap: 12 }}>
-      <ThemedText type="title">{data.course.name}</ThemedText>
-      <ThemedText themeColor="textSecondary">{data.course.professor}</ThemedText>
-    </View>
-    <ThemedText themeColor="textSecondary">One course. A clearer picture. All your lecture ideas, together.</ThemedText>
-    <SectionHeader title="Lecture notebook" detail={`${data.lectures.length} lecture${data.lectures.length === 1 ? '' : 's'}`} />
-    {data.lectures.length ? data.lectures.map(lecture => <LectureCard key={lecture.id} lecture={lecture} />)
-      : <EmptyState title="Room for your next idea" description="No lectures in this course yet. Explore how capturing class material works." action="Explore capture" onPress={() => router.push('/capture')} />}
-    <AppButton title="Capture class material  +" onPress={() => router.push('/capture')} />
-  </Screen>;
+  if (loading && !data) {
+    return (
+      <Screen showBottomNav wide>
+        <View style={styles.centered}>
+          <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Loading course" />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (error || !data?.course) {
+    return (
+      <Screen showBottomNav wide>
+        <Toolbar title={error ? 'Could not load course' : 'Course not found'} />
+        <RowGroup>
+          <Row
+            first
+            title={error ? 'Try again' : 'Back to overview'}
+            meta={[error ? 'The course did not load' : 'It may have moved']}
+            onPress={error ? () => setAttempt((value) => value + 1) : () => router.replace('/')}
+          />
+        </RowGroup>
+      </Screen>
+    );
+  }
+
+  const course = data.course;
+  return (
+    <Screen showBottomNav wide>
+      <Toolbar title={course.name} actions={capture} />
+      <ThemedText style={[styles.meta, { color: theme.textSecondary }]}>
+        {[course.code, course.professor].filter(Boolean).join(' · ')}
+      </ThemedText>
+
+      <Section label="Notebooks" count={data.lectures.length}>
+        <RowGroup>
+          {data.lectures.length ? (
+            data.lectures.map((lecture, index) => (
+              <Row
+                key={lecture.id}
+                first={index === 0}
+                title={lecture.title}
+                meta={[since(lecture.createdAt)]}
+                onPress={() =>
+                  router.push({ pathname: '/lecture/[id]', params: { id: lecture.id } })
+                }
+              />
+            ))
+          ) : (
+            <Row
+              first
+              title="No notebooks in this course"
+              meta={['Capture a board or a page to start']}
+              onPress={() => router.push('/capture')}
+            />
+          )}
+        </RowGroup>
+      </Section>
+    </Screen>
+  );
 }
+
+const styles = StyleSheet.create({
+  primary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 30,
+    paddingHorizontal: 11,
+    borderRadius: Radius.medium,
+  },
+  primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  dim: { opacity: 0.85 },
+  meta: { fontSize: 12.5, lineHeight: 18, marginTop: -4 },
+  centered: { paddingVertical: 48, alignItems: 'center' },
+});

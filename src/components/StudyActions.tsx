@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Brand } from '@/constants/theme';
+import { Radius } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { askLecture, generateQuiz } from '@/services/ai';
 import type { GenerateQuizResult } from '@/types';
 import { ThemedText } from './themed-text';
-import { AppButton } from './ui/AppButton';
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
 }
 
 export function StudyActions({ lectureId }: { lectureId: string }) {
+  const theme = useTheme();
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [quiz, setQuiz] = useState<GenerateQuizResult | null>(null);
@@ -78,87 +79,121 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
     setSelected(null);
   }
 
-  return (
-    <View style={styles.panel}>
-      <ThemedText style={styles.label}>✦ GO FROM KNOWING TO UNDERSTANDING</ThemedText>
-      <ThemedText style={styles.title}>Make it click.</ThemedText>
-      <ThemedText style={styles.body}>
-        Ask the question you didn’t get to ask. Put your understanding to the test.
+  const action = (
+    label: string,
+    onPress: () => void,
+    { primary = false, disabled = false }: { primary?: boolean; disabled?: boolean } = {},
+  ) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed, hovered }) => [
+        styles.button,
+        primary
+          ? { backgroundColor: theme.accent }
+          : { borderWidth: 1, borderColor: theme.border, backgroundColor: theme.backgroundElement },
+        (pressed || hovered) && !disabled ? { opacity: 0.85 } : null,
+        disabled && { opacity: 0.5 },
+      ]}
+    >
+      <ThemedText style={[styles.buttonLabel, { color: primary ? theme.accentText : theme.text }]}>
+        {label}
       </ThemedText>
+    </Pressable>
+  );
 
-      <TextInput
-        value={question}
-        onChangeText={setQuestion}
-        editable={busy !== 'ask'}
-        placeholder="Ask anything from this lecture…"
-        placeholderTextColor="#B0C0DD"
-        accessibilityLabel="Your question about this lecture"
-        multiline
-        maxLength={2000}
-        style={styles.input}
-      />
-      <AppButton
-        title={busy === 'ask' ? 'Asking…' : 'Ask This Lecture  ↗'}
-        secondary
-        disabled={busy !== null || !question.trim()}
-        onPress={ask}
-      />
-
-      {busy === 'ask' ? (
-        <ActivityIndicator color={Brand.lime} accessibilityLabel="Finding an answer" />
-      ) : null}
-      {answer ? (
-        <View style={styles.answer}>
-          <ThemedText style={styles.answerLabel}>ANSWER</ThemedText>
-          <ThemedText accessibilityLiveRegion="polite" style={styles.body}>
-            {answer}
-          </ThemedText>
-        </View>
-      ) : null}
-
-      {quiz ? null : (
-        <AppButton
-          title={busy === 'quiz' ? 'Generating…' : 'Generate Quiz  →'}
-          secondary
-          disabled={busy !== null}
-          onPress={makeQuiz}
+  return (
+    <View style={styles.stack}>
+      <View style={styles.block}>
+        <ThemedText style={[styles.label, { color: theme.textSecondary }]}>Ask</ThemedText>
+        <TextInput
+          value={question}
+          onChangeText={setQuestion}
+          editable={busy !== 'ask'}
+          placeholder="Ask anything from this lecture"
+          placeholderTextColor={theme.textTertiary}
+          accessibilityLabel="Your question about this lecture"
+          multiline
+          maxLength={2000}
+          style={[
+            styles.input,
+            {
+              color: theme.text,
+              borderColor: theme.border,
+              backgroundColor: theme.backgroundElement,
+            },
+          ]}
         />
-      )}
-      {busy === 'quiz' ? (
-        <ActivityIndicator color={Brand.lime} accessibilityLabel="Generating your quiz" />
-      ) : null}
+        <View style={styles.actions}>
+          {action(busy === 'ask' ? 'Asking…' : 'Ask', ask, {
+            primary: true,
+            disabled: busy !== null || !question.trim(),
+          })}
+          {busy === 'ask' ? (
+            <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Finding an answer" />
+          ) : null}
+        </View>
+        {answer ? (
+          <View style={[styles.answer, { borderColor: theme.border }]}>
+            <ThemedText accessibilityLiveRegion="polite" style={styles.text}>
+              {answer}
+            </ThemedText>
+          </View>
+        ) : null}
+      </View>
 
-      {quiz && !finished
-        ? (() => {
-            const total = quiz.questions.length;
-            const item = quiz.questions[index];
-            const answered = selected !== null;
-            const right = answered && selected === item.correctAnswer;
-            const last = index + 1 >= total;
+      <View style={styles.block}>
+        <ThemedText style={[styles.label, { color: theme.textSecondary }]}>Quiz</ThemedText>
+        {quiz ? null : (
+          <View style={styles.actions}>
+            {action(busy === 'quiz' ? 'Generating…' : 'Generate quiz', makeQuiz, {
+              disabled: busy !== null,
+            })}
+            {busy === 'quiz' ? (
+              <ActivityIndicator
+                color={theme.textSecondary}
+                accessibilityLabel="Generating your quiz"
+              />
+            ) : null}
+          </View>
+        )}
 
-            return (
-              <View style={styles.quiz}>
-                <ThemedText style={styles.answerLabel}>
-                  QUIZ · {quiz.title.toUpperCase()}
-                </ThemedText>
-
-                <View
-                  style={styles.track}
-                  accessibilityRole="progressbar"
-                  accessibilityValue={{ min: 0, max: total, now: index + (answered ? 1 : 0) }}
-                >
+        {quiz && !finished
+          ? (() => {
+              const total = quiz.questions.length;
+              const item = quiz.questions[index];
+              const answered = selected !== null;
+              const right = answered && selected === item.correctAnswer;
+              const last = index + 1 >= total;
+              return (
+                <View style={[styles.panel, { borderColor: theme.border }]}>
+                  <View style={styles.quizHead}>
+                    <ThemedText style={styles.text} numberOfLines={1}>
+                      {quiz.title}
+                    </ThemedText>
+                    <ThemedText style={[styles.meta, { color: theme.textSecondary }]}>
+                      {index + 1} of {total}
+                    </ThemedText>
+                  </View>
                   <View
-                    style={[
-                      styles.fill,
-                      { width: `${((index + (answered ? 1 : 0)) / total) * 100}%` },
-                    ]}
-                  />
-                </View>
-                <ThemedText style={styles.progressLabel}>
-                  QUESTION {index + 1} OF {total}
-                </ThemedText>
+                    style={[styles.track, { backgroundColor: theme.backgroundSelected }]}
+                    accessibilityRole="progressbar"
+                    accessibilityValue={{ min: 0, max: total, now: index + (answered ? 1 : 0) }}
+                  >
+                    <View
+                      style={[
+                        styles.fill,
+                        {
+                          backgroundColor: theme.accent,
+                          width: `${((index + (answered ? 1 : 0)) / total) * 100}%`,
+                        },
+                      ]}
+                    />
+                  </View>
 
-                <View style={styles.question}>
                   <ThemedText accessibilityLiveRegion="polite" style={styles.prompt}>
                     {item.question}
                   </ThemedText>
@@ -166,6 +201,7 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
                   {item.options.map((option) => {
                     const chosen = selected === option;
                     const correct = option === item.correctAnswer;
+                    const mark = answered && correct ? '✓' : answered && chosen ? '✕' : '';
                     return (
                       <Pressable
                         key={option}
@@ -174,15 +210,18 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
                         accessibilityState={{ selected: chosen, disabled: answered }}
                         disabled={answered}
                         onPress={() => choose(option, item.correctAnswer)}
-                        style={({ pressed }) => [
+                        style={({ pressed, hovered }) => [
                           styles.option,
-                          answered && correct && styles.correct,
-                          answered && chosen && !correct && styles.wrong,
-                          pressed && styles.pressed,
+                          { borderColor: theme.border },
+                          answered && correct ? { borderColor: theme.success } : null,
+                          answered && chosen && !correct ? { borderColor: theme.danger } : null,
+                          (pressed || hovered) && !answered
+                            ? { backgroundColor: theme.backgroundHover }
+                            : null,
                         ]}
                       >
-                        <ThemedText style={styles.body}>
-                          {answered && correct ? '✓  ' : answered && chosen ? '✕  ' : ''}
+                        <ThemedText style={styles.text}>
+                          {mark ? `${mark}  ` : ''}
                           {option}
                         </ThemedText>
                       </Pressable>
@@ -193,58 +232,45 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
                     <>
                       <ThemedText
                         accessibilityLiveRegion="polite"
-                        style={[styles.verdict, { color: right ? Brand.lime : '#F3C7C7' }]}
+                        style={[styles.verdict, { color: right ? theme.success : theme.danger }]}
                       >
                         {right ? 'Correct' : 'Not quite'}
                       </ThemedText>
-                      <ThemedText style={styles.explanation}>{item.explanation}</ThemedText>
+                      <ThemedText style={[styles.text, { color: theme.textSecondary }]}>
+                        {item.explanation}
+                      </ThemedText>
                     </>
                   ) : null}
+
+                  <View style={styles.actions}>
+                    {action(last ? 'See results' : 'Next question', advance, {
+                      primary: true,
+                      disabled: !answered,
+                    })}
+                  </View>
                 </View>
+              );
+            })()
+          : null}
 
-                <AppButton
-                  title={last ? 'See Results  →' : 'Next Question  →'}
-                  secondary
-                  disabled={!answered}
-                  onPress={advance}
-                />
-              </View>
-            );
-          })()
-        : null}
-
-      {quiz && finished ? (
-        <View style={styles.quiz}>
-          <ThemedText style={styles.answerLabel}>QUIZ COMPLETE</ThemedText>
-
-          <View style={styles.question}>
+        {quiz && finished ? (
+          <View style={[styles.panel, { borderColor: theme.border }]}>
             <ThemedText accessibilityLiveRegion="polite" style={styles.score}>
-              {score} / {quiz.questions.length}
+              {score} / {quiz.questions.length} correct
             </ThemedText>
-
-            <ThemedText style={styles.body}>
-              {score === quiz.questions.length
-                ? 'All five correct. Try explaining the ideas without looking at the answers.'
-                : score >= Math.ceil(quiz.questions.length / 2)
-                  ? 'Solid work. Revisit the ones you missed and it will stick.'
-                  : 'A good place to start. Read the notebook again, then retake it.'}
-            </ThemedText>
+            <View style={styles.actions}>
+              {action('Retake', restart)}
+              {action('Close', () => {
+                setQuiz(null);
+                restart();
+              })}
+            </View>
           </View>
-
-          <AppButton title="Try Again" secondary onPress={restart} />
-          <AppButton
-            title="Back to Notebook"
-            secondary
-            onPress={() => {
-              setQuiz(null);
-              restart();
-            }}
-          />
-        </View>
-      ) : null}
+        ) : null}
+      </View>
 
       {error ? (
-        <ThemedText accessibilityLiveRegion="polite" style={styles.error}>
+        <ThemedText accessibilityLiveRegion="polite" style={[styles.meta, { color: theme.danger }]}>
           {error}
         </ThemedText>
       ) : null}
@@ -253,50 +279,47 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
 }
 
 const styles = StyleSheet.create({
-  panel: { borderRadius: 24, padding: 24, backgroundColor: Brand.navy, gap: 16 },
-  label: { color: Brand.lime, fontSize: 10, lineHeight: 16, letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 32, lineHeight: 40, fontWeight: '500' },
-  body: { color: '#E0E8F7', fontWeight: '400' },
+  stack: { gap: 20 },
+  block: { gap: 8 },
+  label: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  text: { fontSize: 13.5, lineHeight: 20 },
+  meta: { fontSize: 12.5, lineHeight: 18 },
   input: {
-    minHeight: 56,
-    borderRadius: 16,
-    padding: 16,
-    color: '#FFFFFF',
-    backgroundColor: '#10203B',
+    minHeight: 64,
     borderWidth: 1,
-    borderColor: '#425779',
-    fontSize: 16,
-    lineHeight: 24,
-    textAlignVertical: 'top',
-  },
-  answer: { borderRadius: 16, padding: 16, backgroundColor: '#10203B', gap: 8 },
-  answerLabel: { color: Brand.lime, fontSize: 10, lineHeight: 16, letterSpacing: 1 },
-  quiz: { gap: 16 },
-  track: {
-    height: 4,
-    width: '100%',
-    borderRadius: 4,
-    overflow: 'hidden',
-    backgroundColor: '#425779',
-  },
-  fill: { height: 4, backgroundColor: Brand.lime },
-  progressLabel: { color: '#BED1EF', fontSize: 12, lineHeight: 16, letterSpacing: 1 },
-  question: { gap: 8, borderRadius: 16, padding: 16, backgroundColor: '#10203B' },
-  verdict: { fontWeight: '700', lineHeight: 24, paddingTop: 4 },
-  score: { color: '#FFFFFF', fontSize: 40, lineHeight: 48, fontWeight: '600' },
-  prompt: { color: '#FFFFFF', fontWeight: '600', lineHeight: 24 },
-  option: {
-    minHeight: 48,
+    borderRadius: Radius.medium,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    fontSize: 13.5,
+    lineHeight: 20,
+    outlineStyle: 'none',
+  } as object,
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  button: {
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: Radius.medium,
+    alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#425779',
   },
-  correct: { backgroundColor: '#2C5B43', borderColor: Brand.lime },
-  wrong: { borderColor: '#C98B8B' },
-  pressed: { opacity: 0.6 },
-  explanation: { color: '#BED1EF', fontSize: 14, lineHeight: 22, paddingTop: 4 },
-  error: { color: '#F3C7C7', lineHeight: 24 },
+  buttonLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  answer: { borderWidth: 1, borderRadius: Radius.medium, padding: 12 },
+  panel: { borderWidth: 1, borderRadius: Radius.large, padding: 14, gap: 10 },
+  quizHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  track: { height: 3, borderRadius: Radius.pill, overflow: 'hidden' },
+  fill: { height: 3, borderRadius: Radius.pill },
+  prompt: { fontSize: 14, lineHeight: 21, fontWeight: '600', marginTop: 2 },
+  option: {
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  verdict: { fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
+  score: { fontSize: 19, lineHeight: 26, fontWeight: '600' },
 });

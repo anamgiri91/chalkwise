@@ -206,6 +206,9 @@ export default function RootLayout() {
           name="lecture/[id]"
           options={{
             title: 'Lecture notebook',
+            // The notebook renders its own back control and title, and the stack
+            // header would otherwise sit above the workspace sidebar.
+            headerShown: false,
           }}
         />
 

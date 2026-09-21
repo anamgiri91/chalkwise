@@ -1,18 +1,19 @@
 import { useCallback, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { View } from 'react-native';
-import { CourseCard } from '@/components/CourseCard';
+import { router, useFocusEffect } from 'expo-router';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AddCourseSheet } from '@/components/AddCourseSheet';
-import { AppCard } from '@/components/ui/AppCard';
-import { AppButton } from '@/components/ui/AppButton';
-import { EmptyState, SectionHeader, StatusBadge } from '@/components/ui/Editorial';
-import { Screen } from '@/components/ui/Screen';
 import { ThemedText } from '@/components/themed-text';
-import { getMyEnrolledCourses, enrollInCourse, unenrollFromCourse } from '@/services/enrollment';
+import { AppIcon } from '@/components/ui/AppIcon';
+import { Row, RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { Screen } from '@/components/ui/Screen';
+import { Radius } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getCourses } from '@/services/courses';
+import { enrollInCourse, getMyEnrolledCourses, unenrollFromCourse } from '@/services/enrollment';
 import type { Course } from '@/types';
 
 export default function CoursesScreen() {
+  const theme = useTheme();
   const [courses, setCourses] = useState<Course[]>([]);
   const [catalog, setCatalog] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,78 +61,167 @@ export default function CoursesScreen() {
     }
   }
   const available = catalog.filter((course) => !courses.some((mine) => mine.id === course.id));
+  const open = (id: string) => router.push({ pathname: '/course/[id]', params: { id } });
   return (
     <>
-      <Screen showBottomNav>
-        <StatusBadge label="YOUR SEMESTER" />
-        <ThemedText type="title">Room for every idea.</ThemedText>
-        <ThemedText themeColor="textSecondary">
-          One notebook for each class. Find the lectures, original material, and concepts you want
-          to come back to.
-        </ThemedText>
-        <AppButton
-          title={browse ? 'Close course catalog' : 'Add a course'}
-          onPress={() => setBrowse((value) => !value)}
-        />
-        {error ? (
-          <EmptyState
-            title="Couldn't update your workspace"
-            description={error}
-            action="Try again"
-            onPress={() => setAttempt((x) => x + 1)}
-          />
-        ) : null}
-        {browse ? (
-          <AppCard>
-            <SectionHeader title="Course catalog" detail={`${available.length} available`} />
-            {available.map((course) => (
-              <View key={course.id} style={{ gap: 8, paddingVertical: 8 }}>
-                <ThemedText type="smallBold">
-                  {course.code} · {course.name}
+      <Screen showBottomNav wide>
+        <Toolbar
+          title="Courses"
+          actions={
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={browse ? 'Close the course catalog' : 'Open the course catalog'}
+                accessibilityState={{ expanded: browse }}
+                onPress={() => setBrowse((value) => !value)}
+                style={({ pressed, hovered }) => [
+                  styles.secondary,
+                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                  (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+                ]}
+              >
+                <ThemedText style={styles.secondaryLabel}>{browse ? 'Done' : 'Catalog'}</ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Create a course"
+                onPress={() => setAdding(true)}
+                style={({ pressed, hovered }) => [
+                  styles.primary,
+                  { backgroundColor: theme.accent },
+                  (pressed || hovered) && styles.dim,
+                ]}
+              >
+                <AppIcon name="plus" size={14} color={theme.accentText} />
+                <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
+                  New course
                 </ThemedText>
-                <AppButton
-                  secondary
-                  title={`Join ${course.code}`}
-                  disabled={busy}
-                  onPress={() => membership(course, true)}
-                />
-              </View>
-            ))}
-            <AppButton title="Create a missing course" onPress={() => setAdding(true)} />
-          </AppCard>
+              </Pressable>
+            </>
+          }
+        />
+
+        {error ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${error} Try again.`}
+            accessibilityLiveRegion="polite"
+            onPress={() => setAttempt((x) => x + 1)}
+            style={[styles.notice, { borderColor: theme.border }]}
+          >
+            <ThemedText style={[styles.noticeText, { color: theme.danger }]}>{error}</ThemedText>
+            <ThemedText style={[styles.noticeText, { color: theme.accent }]}>Retry</ThemedText>
+          </Pressable>
         ) : null}
-        <SectionHeader title="My courses" detail={`${courses.length} enrolled`} />
-        {loading ? (
-          <EmptyState
-            loading
-            title="Opening your courses"
-            description="Gathering your notebooks."
-          />
-        ) : courses.length ? (
-          courses.map((course) => (
-            <View key={course.id} style={{ gap: 8 }}>
-              <CourseCard course={course} />
-              {browse ? (
-                <AppButton
-                  secondary
-                  disabled={busy}
-                  title={`Leave ${course.code}`}
-                  onPress={() => membership(course, false)}
-                />
-              ) : null}
-            </View>
-          ))
-        ) : (
-          <EmptyState
-            title="Choose your first course"
-            description="Open the catalog to join a course or create one."
-            action="Browse courses"
-            onPress={() => setBrowse(true)}
-          />
-        )}
+
         {browse ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Leaving a course removes it from your workspace. Saved notes are retained; rejoin to see
+          <Section label="Course catalog" count={available.length}>
+            <RowGroup>
+              {available.length ? (
+                available.map((course, index) => (
+                  <Row
+                    key={course.id}
+                    first={index === 0}
+                    title={course.name}
+                    meta={[course.code, course.professor]}
+                    accessibilityHint={`Adds ${course.code} to your courses`}
+                    onPress={() => void membership(course, true)}
+                  />
+                ))
+              ) : (
+                <Row
+                  first
+                  title="No other courses"
+                  meta={['Create one instead']}
+                  onPress={() => setAdding(true)}
+                />
+              )}
+            </RowGroup>
+          </Section>
+        ) : null}
+
+        <Section label="My courses" count={courses.length}>
+          {loading && !courses.length ? (
+            <View style={styles.loading}>
+              <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Loading courses" />
+            </View>
+          ) : (
+            <RowGroup>
+              {courses.length ? (
+                courses.map((course, index) => (
+                  <View
+                    key={course.id}
+                    style={[
+                      styles.row,
+                      index > 0 && { borderTopWidth: 1, borderTopColor: theme.border },
+                    ]}
+                  >
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${course.name}, ${course.code}`}
+                      accessibilityHint="Opens this course"
+                      onPress={() => open(course.id)}
+                      style={({ pressed, hovered }) => [
+                        styles.rowMain,
+                        (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+                      ]}
+                    >
+                      <ThemedText numberOfLines={1} style={styles.rowTitle}>
+                        {course.name}
+                      </ThemedText>
+                      <View style={styles.rowMeta}>
+                        <ThemedText
+                          numberOfLines={1}
+                          style={[styles.meta, { color: theme.textSecondary }]}
+                        >
+                          {course.code}
+                        </ThemedText>
+                        {course.professor ? (
+                          <ThemedText
+                            numberOfLines={1}
+                            style={[styles.meta, { color: theme.textSecondary }]}
+                          >
+                            {course.professor}
+                          </ThemedText>
+                        ) : null}
+                        <AppIcon name="arrow" size={14} color={theme.textTertiary} />
+                      </View>
+                    </Pressable>
+                    {browse ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Leave ${course.code}`}
+                        accessibilityState={{ disabled: busy }}
+                        disabled={busy}
+                        onPress={() => void membership(course, false)}
+                        style={({ pressed, hovered }) => [
+                          styles.leave,
+                          { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                          (pressed || hovered || busy) && styles.dim,
+                        ]}
+                      >
+                        <ThemedText style={[styles.leaveLabel, { color: theme.danger }]}>
+                          Leave
+                        </ThemedText>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ))
+              ) : (
+                <Row
+                  first
+                  title="No courses yet"
+                  meta={['Open the catalog to join one']}
+                  onPress={() => setBrowse(true)}
+                />
+              )}
+            </RowGroup>
+          )}
+        </Section>
+
+        {browse ? (
+          <ThemedText style={[styles.footnote, { color: theme.textTertiary }]}>
+            Leaving a course removes it from your workspace. Saved notes are kept; rejoin to see
             them again.
           </ThemedText>
         ) : null}
@@ -146,3 +236,61 @@ export default function CoursesScreen() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  primary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 30,
+    paddingHorizontal: 11,
+    borderRadius: Radius.medium,
+  },
+  primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  secondary: {
+    justifyContent: 'center',
+    height: 30,
+    paddingHorizontal: 11,
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+  },
+  secondaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  dim: { opacity: 0.85 },
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    minHeight: 36,
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+  },
+  noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
+  loading: { paddingVertical: 48, alignItems: 'center' },
+  // Enrolled rows carry a second control, so the row is a container with two
+  // sibling press targets: nesting one Pressable inside another fires both.
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minWidth: 0,
+    minHeight: 44,
+    paddingHorizontal: 14,
+  },
+  rowTitle: { fontSize: 13.5, lineHeight: 19, fontWeight: '500', flexShrink: 1, flexGrow: 1 },
+  rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 14, flexShrink: 0 },
+  meta: { fontSize: 12.5, lineHeight: 18, minWidth: 92, textAlign: 'right' },
+  leave: {
+    justifyContent: 'center',
+    height: 26,
+    paddingHorizontal: 10,
+    marginRight: 10,
+    borderWidth: 1,
+    borderRadius: Radius.small,
+  },
+  leaveLabel: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
+  footnote: { fontSize: 12, lineHeight: 16, marginTop: 4 },
+});
