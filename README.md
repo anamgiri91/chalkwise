@@ -1,220 +1,107 @@
-<p align="center">
-  <img src="assets/images/classlens-icon.png" width="120" alt="ClassLens icon" />
-</p>
+# ClassLens
 
-<h1 align="center">ClassLens</h1>
+**Capture a lecture. Check the source. Remember what matters.**
 
-<p align="center">
-  <strong>Capture the lecture. Keep the knowledge.</strong>
-</p>
+ClassLens is a study workspace for a pilot of 10–20 college students. It connects lecture photos, organized notes, source-based questions, quizzes, and a personal review queue. The redesigned home shows the student's courses, recent notes, and next review. Notebooks keep originals separate from AI output and let students recall a topic before revealing the notes.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Expo_SDK-57-000020?logo=expo" alt="Expo SDK 57" />
-  <img src="https://img.shields.io/badge/React_Native-0.86-61DAFB?logo=react" alt="React Native" />
-  <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Gemini-AI-4285F4?logo=google" alt="Gemini AI" />
-  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="MIT License" />
-</p>
+The new backend uses PostgreSQL, Amazon Cognito, and private Amazon S3. It is ready for deployment preparation on AWS; no cloud resources have been provisioned and no existing Supabase data has been migrated. The legacy adapter stays available until live acceptance and cutover are complete.
 
----
+## Implemented experience
 
-ClassLens is an intelligent mobile notebook for college students. It turns photos of lecture slides, whiteboards, and handwritten notes into organized course material that students can review, search, ask questions about, and use to generate quizzes.
+- Email confirmation, sign-in, password reset, profile editing, course creation and enrollment.
+- Camera capture with blur/exposure checks and a single-photo processing path to saved notes.
+- Course and notebook search, original-photo access, AI questions and quizzes in live modes.
+- Active recall with explicit confidence choices: review again in four hours, one day, or three days. These are review intervals, not mastery estimates.
+- Friend requests and opt-in notebook sharing in API mode. Only accepted friends enrolled in the course can read a shared notebook. Recipients can save an independent copy.
+- Responsive mobile/web navigation, light/dark themes, loading/error states, and a populated local demo.
 
-Designed for a focused community of college students, ClassLens emphasizes **fast capture**, **faithful note extraction**, and a **simple end-to-end study workflow**.
+Capture can retain up to six photos locally; processing all six together, durable resume after app termination, background processing, notifications, automatic attendance inference, and hardware integration remain future work. Demo uploads and AI are intentionally unavailable; demo review and browsing work locally.
 
-## ✨ Core Experience
+## Architecture
 
-```
-Sign up → Complete profile → Select courses → Capture lecture photos
-→ Verify photo quality → Process & organize notes → Review, ask questions, and quiz
-```
-
-## 📋 Features
-
-### 🔐 Authentication & Onboarding
-- Email/password authentication with Supabase Auth
-- Email-confirmation-aware signup flow
-- Student profile onboarding — name, academic year, and major
-- Per-user course enrollment with row-level security
-- Global course catalog with support for creating missing courses
-
-### 📸 Capture
-- Live rear-camera experience using Expo Camera
-- Rapid capture of up to **six photos per session**
-- Thumbnail strip with full-photo preview, removal, and session retention
-- On-device photo-quality analysis using real sampled pixels:
-  - Laplacian-variance blur detection
-  - Severe underexposure / overexposure detection
-- **Retake** or **Keep Anyway** flow for low-quality shots
-- Typed multi-photo capture-session handoff to processing
-
-### ⚙️ Processing
-- Durable multi-photo processing queue with safe retry and resume
-- Background upload and processing using `expo-background-task`
-- Batch AI analysis across every photo in a lecture session
-- Automatic course matching using enrollment, schedule, and AI signals
-- Course-confirmation drafts when a confident match is unavailable
-
-### 📓 Notebook
-- Per-photo **faithful extraction** alongside combined **AI-organized notes**
-- Lecture summaries, key concepts, examples, assignments, and exam mentions
-- Home and course views filtered to the signed-in student's courses
-- Semester notebook and lecture search
-
-### 🧠 AI-Powered Study Tools
-- **Ask This Lecture** — grounded Q&A over lecture content and original photos
-- **Generate Quiz** — auto-generated quizzes from lecture material
-
-### 🤝 Social & CatchUp
-- Friend connections with request/accept flow
-- Automatic **CatchUp** opportunities when a classmate misses a lecture
-- CatchUp push notifications
-- **Add to My Notes** — independent notebook copies for shared CatchUp notes
-
-### 🛠 Developer Experience
-- **Mock** and **Supabase** data modes for development
-- Strict TypeScript throughout
-- Clean service-layer abstraction (screens never call Supabase directly)
-
-## 🏗 Architecture
-
-ClassLens keeps screen components cleanly separated from data access:
-
-```
-Expo Router screens
-        ↓
-  Service layer
-        ↓
-Mock mode  ·or·  Supabase mode
-                      ↓
-         PostgreSQL · Storage · Edge Functions
+```mermaid
+flowchart LR
+  Screens[Expo screens] --> Services[Typed services]
+  Services --> Demo[In-memory demo]
+  Services --> API[Fastify API]
+  Services -. migration fallback .-> Legacy[Legacy Supabase]
+  Screens --> Auth[Amazon Cognito]
+  API --> DB[(PostgreSQL / Amazon RDS)]
+  API --> Storage[Private Amazon S3]
+  API --> AI[Gemini]
 ```
 
-The camera pipeline operates in two layers:
+The API verifies Cognito access tokens, validates request bodies, and uses parameterized queries with a transaction-local user identity. PostgreSQL row-level security provides a second access boundary. Runtime credentials cannot own the tables or bypass RLS. Photos use immutable object keys, integrity metadata, recoverable upload intents, and short-lived signed URLs. Database scripts are separate from application startup.
 
-| Layer | Responsibility |
-|-------|---------------|
-| **On-device** | Capture, local persistence, blur/exposure checks, Retake/Keep Anyway |
-| **Async processing** | Upload, AI analysis, course matching, notebook creation, retries, notifications |
+The app stores native refresh tokens in SecureStore; web sessions remain in memory. AI credentials stay on the server. Original photos and explicit sharing choices remain under the student's control. Generated content still needs checking against the source.
 
-## 🛠 Tech Stack
+## Run the demo
 
-| Layer | Technologies |
-|-------|-------------|
-| **Mobile** | React Native · Expo SDK 57 · Expo Router · TypeScript · React |
-| **Camera & Image** | `expo-camera` · `expo-image-manipulator` · `jpeg-js` · Laplacian-variance & luminance analysis |
-| **Background** | `expo-background-task` · `expo-notifications` |
-| **Backend** | Supabase Auth · Supabase PostgreSQL · Supabase Storage · Supabase Edge Functions |
-| **Security** | PostgreSQL Row Level Security (RLS) · SQL migrations |
-| **AI** | Google Gemini via Edge Functions — structured analysis, grounded Q&A, quiz generation |
-| **Dev Tools** | npm · TypeScript strict mode · Expo CLI · Git & GitHub |
+Use Node.js 22.18 or later and npm. From the repository root:
 
-## 📁 Project Structure
-
-```
-classLens/
-├── assets/                         App icons, splash screen, tab icons
-├── docs/                           Product plan and engineering workflow
-├── src/
-│   ├── app/                        Expo Router screens and layouts
-│   ├── components/                 Shared UI components
-│   ├── constants/                  Theme tokens and shared constants
-│   ├── features/                   Feature-scoped types, state, and logic
-│   ├── hooks/                      Reusable React hooks
-│   ├── lib/                        Supabase client and analysis helpers
-│   ├── services/                   Data and business-logic boundary
-│   └── types/                      Shared application types
-├── supabase/
-│   ├── functions/                  AI-powered Edge Functions
-│   │   ├── analyze-material/       Batch lecture photo analysis
-│   │   ├── ask-lecture/            Grounded lecture Q&A
-│   │   └── generate-quiz/         Quiz generation from lecture content
-│   ├── migrations/                 Database schema and RLS history
-│   └── seed.sql                    Development and demo seed data
-├── AGENTS.md                       Repository instructions for coding agents
-├── SHARED_CONTRACTS.md             Operational service and data contracts
-├── app.json                        Expo configuration
-├── package.json                    Dependencies and scripts
-└── tsconfig.json                   TypeScript configuration
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-| Requirement | Notes |
-|------------|-------|
-| **Node.js** and **npm** | LTS recommended |
-| **Expo Go** | On a physical iOS/Android device — or a local simulator |
-| **Supabase project** | Required for Supabase mode |
-| **Gemini credentials** | Configured as Supabase Edge Function secrets |
-
-### Installation
-
-```bash
-git clone https://github.com/rejankarki1/classLens.git
-cd classLens
-npm install
-```
-
-### Environment Setup
-
-Copy the environment template and fill in your values:
-
-```bash
+```sh
+npm ci
+npm ci --prefix server
 cp .env.example .env.local
+npm run web
 ```
 
-```env
-# Choose mock or supabase. Missing DATA_MODE defaults to mock.
-EXPO_PUBLIC_DATA_MODE=supabase
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+The template defaults to `EXPO_PUBLIC_DATA_MODE=mock`. No cloud credentials are needed for the demo. Use `npm start` for the Expo development server, or `npm run ios` / `npm run android` with the corresponding native development tools installed. Native authentication needs a build containing SecureStore.
+
+## Run against the API
+
+First follow [API setup](server/README.md) to prepare a separate PostgreSQL database, Cognito pool/client, and private S3 bucket. Review schema scripts before applying them. Configure the server using `server/.env.example`, then run:
+
+```sh
+npm run dev --prefix server
 ```
 
-> **⚠️ Do not commit `.env.local` or any secret keys.**
+Set these public identifiers in the app's `.env.local` and restart Expo:
 
-### Run the App
-
-```bash
-npx expo start --clear
+```dotenv
+EXPO_PUBLIC_DATA_MODE=api
+EXPO_PUBLIC_API_URL=https://your-api.example.com
+EXPO_PUBLIC_AWS_REGION=us-east-1
+EXPO_PUBLIC_COGNITO_CLIENT_ID=your-public-app-client-id
 ```
 
-Scan the QR code with **Expo Go**, or press `i` / `a` to launch a simulator or emulator.
+These identifiers are public configuration. Database passwords, Gemini keys, and AWS secret keys belong only on the server. Follow the [AWS deployment and cutover runbook](docs/architecture/AWS_DEPLOYMENT.md) for TLS, least-privilege roles, pilot eligibility, backups, acceptance checks, and source-data migration.
 
-### Type Check
+| Data mode | Behavior |
+| --- | --- |
+| `mock` (default) | Populated demo; changes are in memory and reset on restart |
+| `api` | Cognito authentication and the new PostgreSQL/S3 API |
+| `supabase` | Preserved legacy backend for migration and rollback preparation |
 
-```bash
-npx tsc --noEmit
+## Tests and checks
+
+```sh
+npm run check          # App/server typechecks, tests, legacy checks, scoped formatting
+npm run build:web      # Expo production web export
+git diff --check
 ```
 
-## 🔄 Data Modes
+The suite covers signed-token rejection, API validation and access gates, safe errors, upload recovery, session races, review scheduling, AI result validation, capture quality, and ambiguous course matching. Legacy Edge Function harnesses remain part of the ordinary test command.
 
-ClassLens supports two development modes, controlled by `EXPO_PUBLIC_DATA_MODE` in `.env.local`:
+PostgreSQL isolation tests run separately against a prepared local disposable database using the restricted runtime login:
 
-| Mode | Description |
-|------|-------------|
-| `mock` | Local demo data — no Supabase connection required |
-| `supabase` | Real authentication, database, storage, and Edge Functions |
+```sh
+TEST_DATABASE_URL=postgres://runtime:password@localhost:5432/classlens_test npm run test:db --prefix server
+```
 
-## 🔒 Database & Security
+Without that explicit URL the database test is skipped. Ordinary tests never apply migrations or use production credentials. GitHub Actions is configured to run the checks, web export, container build, and isolation test against a disposable PostgreSQL service. Local passing tests do not establish live AWS or physical-device behavior; see the [verification record](docs/architecture/VERIFICATION.md) for results and outstanding checks.
 
-- Schema changes are tracked in `supabase/migrations/`
-- User-owned data is protected with **PostgreSQL Row Level Security** policies
-- Course memberships are isolated by authenticated user
-- The course catalog is shared; each student's enrollment is private
-- Screens use the service layer — **no direct Supabase queries**
-- Secrets belong in Supabase function secrets or local ignored environment files, **never in source control**
+## Project map
 
-## 📚 Documentation
+| Path | Responsibility |
+| --- | --- |
+| `src/app`, `src/components` | Expo screens and reusable UI |
+| `src/services` | Data adapters and service boundary |
+| `src/features`, `src/types` | Domain logic and shared contracts |
+| `src/lib` | Authentication, HTTP, parsing, and client infrastructure |
+| `server/src` | API, repositories, auth, storage, and AI providers |
+| `server/migrations`, `server/infra` | Reviewed schema and runtime-role scripts |
+| `tests`, `server/tests` | App/domain, API, provider, and opt-in database tests |
+| `supabase` | Preserved legacy functions and schema history |
 
-| Document | Purpose |
-|----------|---------|
-| [`CLASSLENS_IMPLEMENTATION_PLAN.md`](docs/CLASSLENS_IMPLEMENTATION_PLAN.md) | Authoritative product architecture and milestones |
-| [`SHARED_CONTRACTS.md`](SHARED_CONTRACTS.md) | Operational data and service contracts |
-| [`AGENTS.md`](AGENTS.md) | Repository rules for coding agents |
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+The [implementation plan](docs/CLASSLENS_IMPLEMENTATION_PLAN.md) points to the [full-stack plan and checkpoint history](docs/architecture/FULL_STACK_PLAN.md). [SHARED_CONTRACTS.md](SHARED_CONTRACTS.md) defines the service, identity, and sharing boundaries.

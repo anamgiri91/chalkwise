@@ -15,7 +15,11 @@ const shapes = {
   quiz: 'Return {title:string,questions:[{question:string,options:string[],correctAnswer:string,explanation:string}]}. Exactly five distinct questions, four distinct options each. correctAnswer must exactly match one option. Base every question on the supplied material; explain the answer using that material. If the material is insufficient, return {error:"Insufficient source material"}.',
 };
 
-export function geminiAi(apiKey: string | undefined, model: string): Ai {
+export function geminiAi(
+  apiKey: string | undefined,
+  model: string,
+  transport: typeof fetch = fetch,
+): Ai {
   return {
     async generate(kind, context, photos) {
       if (!apiKey)
@@ -31,7 +35,7 @@ export function geminiAi(apiKey: string | undefined, model: string): Ai {
           'Use up to six photos totaling at most 10 MiB for this study tool.',
         );
       }
-      const response = await fetch(
+      const response = await transport(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
           method: 'POST',
@@ -69,7 +73,13 @@ export function geminiAi(apiKey: string | undefined, model: string): Ai {
             },
           }),
         },
-      );
+      ).catch(() => {
+        throw new ApiError(
+          503,
+          'AI_UNAVAILABLE',
+          'The study service could not be reached. Try again shortly.',
+        );
+      });
       if (!response.ok)
         throw new ApiError(503, 'AI_UNAVAILABLE', 'The study service is busy. Try again shortly.');
       const body = (await response.json()) as {

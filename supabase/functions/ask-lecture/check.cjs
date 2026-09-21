@@ -76,6 +76,7 @@ function request(body={lectureId:id,question:'What are the deletion cases?'},key
   if(name==='@/lib/lectureAnalysis')return {};
   if(name==='@/lib/dataMode')return {getDataMode:()=>mode};
   if(name==='@/lib/supabase')return {supabase:{functions:{invoke:async(name,{body})=>{calls++;assert.equal(name,'ask-lecture');assert.equal(body.lectureId,id);return result;}}}};
+    if (name === '@/lib/api') return { apiRequest: () => { throw new Error('Legacy mode must not call the AWS API'); } };
   throw Error(name);
  }});
  assert.equal((await exports.askLecture(id,'Question')).answer,'Grounded answer');

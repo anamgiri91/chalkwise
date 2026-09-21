@@ -124,6 +124,7 @@ function request(body = JSON.stringify({ materialId: id }), headers = {}, method
       assert.equal(name, 'analyze-material'); assert.equal(JSON.stringify(options.body), JSON.stringify({ materialId: id }));
       invoked++; return result;
     } } } };
+    if (name === '@/lib/api') return { apiRequest: () => { throw new Error('Legacy mode must not call the AWS API'); } };
     throw new Error('Unexpected import');
   } });
   assert.deepEqual(await exports.analyzeMaterial({ id, type: 'photo' }), parseLectureAnalysis(analysis));

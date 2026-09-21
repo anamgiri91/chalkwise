@@ -1,6 +1,6 @@
 # ClassLens: from lecture capture to a dependable study companion
 
-Status: implementation in progress. Approved direction: full-stack redesign with an AWS-deployable replacement for Supabase; local commits at each completed checkpoint. No cloud deployment or database migration is authorized.
+Status: checkpoints 0–4 implemented and locally committed; checkpoint 5 adds verification, CI, and the deployment handoff. Live database, browser/device, and AWS acceptance remain open. Approved direction: full-stack redesign with an AWS-deployable replacement for Supabase; local commits at each completed checkpoint. No cloud deployment or database migration is authorized.
 
 ## Product decision
 
@@ -42,6 +42,19 @@ Deploy later as one API container with a private RDS instance and S3 bucket in o
 | 5 | Verification and handoff | Reproducible setup, deployment and cutover instructions, honest test report | Full relevant suite; npx tsc --noEmit; git diff --check; device checklist |
 
 Each completed checkpoint gets a local commit. If required verification cannot run, record the exact blocker and do not describe the checkpoint as verified. Do not commit secrets, dependency directories, build output, or logs.
+
+### Delivery record
+
+| Checkpoint | Local commit | Evidence |
+| --- | --- | --- |
+| Original archive | `9f7d1f2` | Original project preserved before implementation |
+| Product plan | `0980c2e` | Scope, architecture, migration path and test gates |
+| PostgreSQL API | `b256551` | API/auth/storage/recovery tests and server typecheck |
+| App integration | `9ec8c27` | Session/HTTP tests and app typecheck |
+| Study workspace | `efd1cf0` | Domain/capture tests, app/server checks and web export |
+| Verification and handoff | Commit containing this record | [Verification results and open gates](VERIFICATION.md), [AWS runbook](AWS_DEPLOYMENT.md), and CI configuration |
+
+These are implementation checkpoints, not production acceptance certificates. The RLS test must run against a real disposable PostgreSQL instance, and the device checklist must be exercised before live cutover. Hardware remains a later product decision; its useful role would be authenticated, student-initiated capture feeding the same material API.
 
 ## Security and reliability acceptance criteria
 

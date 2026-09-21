@@ -77,6 +77,7 @@ function request(body={lectureId:id},key='test-key',method='POST'){
   if(name==='@/lib/lectureAnalysis')return {};
   if(name==='@/lib/dataMode')return {getDataMode:()=>mode};
   if(name==='@/lib/supabase')return {supabase:{functions:{invoke:async(name,{body})=>{calls++;assert.equal(name,'generate-quiz');assert.equal(body.lectureId,id);return result;}}}};
+    if (name === '@/lib/api') return { apiRequest: () => { throw new Error('Legacy mode must not call the AWS API'); } };
   throw Error(name);
  }});
  assert.deepEqual(await exports.generateQuiz(id),quiz);
