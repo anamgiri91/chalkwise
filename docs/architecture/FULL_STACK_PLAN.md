@@ -47,7 +47,7 @@ Each completed checkpoint gets a local commit. If required verification cannot r
 
 - Missing, expired, wrong-pool, wrong-client, and wrong-token-type credentials are rejected. No development authentication bypass ships in the server.
 - The request body cannot select its user identity. RLS context comes from a verified token and is local to one database transaction.
-- Private notebooks remain private by default. Sharing requires an explicit author action, an accepted friendship, and the recipient's enrollment in the same course. Turning off sharing revokes future reads and signed links; already downloaded files and independent copies cannot be recalled.
+- Private notebooks remain private by default. Sharing requires an explicit author action, an accepted friendship, and the recipient's enrollment in the same course. Turning off sharing revokes future reads and new signed links; previously issued links expire within five minutes. Downloaded files and independent copies cannot be recalled.
 - Profile discovery returns names and academic details, never email, password, or Cognito internals.
 - Database migrations are additive and separate from application startup. They are reviewed and applied only after a separate request.
 - Originals remain immutable. Upload and copy retries use stable identities; errors never turn into fake success. AI failures are visible and retryable.
