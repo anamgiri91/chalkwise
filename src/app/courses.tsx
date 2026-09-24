@@ -191,6 +191,7 @@ export default function CoursesScreen() {
                         accessibilityLabel={`Leave ${course.code}`}
                         accessibilityState={{ disabled: busy }}
                         disabled={busy}
+                        hitSlop={9}
                         onPress={() => void membership(course, false)}
                         style={({ pressed, hovered }) => [
                           styles.leave,

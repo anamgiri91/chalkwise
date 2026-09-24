@@ -183,6 +183,7 @@ export default function CatchupScreen() {
                                 event.stopPropagation();
                                 router.push({ pathname: '/lecture/[id]', params: { id: mine } });
                               }}
+                              hitSlop={9}
                               style={({ pressed, hovered }) => [
                                 styles.action,
                                 {
@@ -206,6 +207,7 @@ export default function CatchupScreen() {
                                 event.stopPropagation();
                                 void copy(id);
                               }}
+                              hitSlop={9}
                               style={({ pressed, hovered }) => [
                                 styles.action,
                                 {

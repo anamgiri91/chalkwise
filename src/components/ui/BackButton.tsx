@@ -13,7 +13,8 @@ export function BackButton() {
       accessibilityRole="button"
       accessibilityLabel="Back"
       onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-      hitSlop={8}
+      // 26px visual height; the slop brings the touch area to 44px.
+      hitSlop={9}
       style={({ pressed, hovered }) => [
         styles.back,
         { borderColor: theme.border, backgroundColor: theme.backgroundElement },

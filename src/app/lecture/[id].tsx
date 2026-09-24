@@ -399,9 +399,10 @@ export default function LectureNotebookScreen() {
                       accessibilityState={{ disabled: busy, selected }}
                       disabled={busy}
                       onPress={() => saveReview(option.value)}
-                      hitSlop={6}
                       style={({ pressed, hovered }) => [
                         styles.choice,
+                        // Primary study action: full touch targets on phones.
+                        { minHeight: width < 600 ? 44 : 36 },
                         {
                           borderColor: selected ? theme.borderStrong : theme.border,
                           backgroundColor: selected ? theme.backgroundSelected : theme.background,
@@ -631,7 +632,6 @@ const styles = StyleSheet.create({
   choice: {
     flexGrow: 1,
     minWidth: 112,
-    minHeight: 34,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 10,
