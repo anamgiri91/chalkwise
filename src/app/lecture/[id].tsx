@@ -27,6 +27,7 @@ import {
   getReviews,
   getWorkspaceCapabilities,
 } from '@/services/study';
+import { buildReviewQueue } from '@/features/study/queue';
 import type { Course, Lecture, LectureReview, LectureSharing, ReviewConfidence } from '@/types';
 
 /**
@@ -251,11 +252,20 @@ export default function LectureNotebookScreen() {
         if (!active) return;
         setCourse(courseResult.status === 'fulfilled' ? courseResult.value : null);
         setSharing(sharingResult.status === 'fulfilled' ? sharingResult.value : null);
-        setReview(
+        const noteReview =
           reviewsResult.status === 'fulfilled'
             ? (reviewsResult.value.find((item) => item.lectureId === id) ?? null)
-            : null,
-        );
+            : null;
+        setReview(noteReview);
+        const reviewable =
+          capabilities.reviews &&
+          (capabilities.mode === 'mock' ||
+            (sharingResult.status === 'fulfilled' && sharingResult.value?.canEdit === true));
+        // Active recall: a due notebook starts with its notes hidden until the student reveals them.
+        const due =
+          reviewsResult.status === 'fulfilled' &&
+          buildReviewQueue([note], noteReview ? [noteReview] : []).length > 0;
+        setShowNotes(!(reviewable && due));
         if (sharingResult.status === 'rejected' || reviewsResult.status === 'rejected')
           setActionError('Some study settings could not load. Refresh to try again.');
         if (materialsResult.status === 'fulfilled') {
