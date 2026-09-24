@@ -3,10 +3,15 @@ import assert from 'node:assert/strict';
 import { buildApp } from '../src/app.ts';
 import type { Repository } from '../src/repository.ts';
 import { ApiError } from '../src/errors.ts';
+import { Writable } from 'node:stream';
 
 const user = 'bd90d574-fd6c-4ce4-bf77-897162f7180d';
 const headers = { authorization: 'Bearer test-token' };
-async function setup(overrides: Partial<Repository> = {}, ping = async () => {}) {
+async function setup(
+  overrides: Partial<Repository> = {},
+  ping = async () => {},
+  options: Partial<Parameters<typeof buildApp>[0]> = {},
+) {
   const repo = new Proxy(overrides, {
     get(target, key) {
       return (
@@ -30,6 +35,7 @@ async function setup(overrides: Partial<Repository> = {}, ping = async () => {})
         throw new Error('AI must not run');
       },
     },
+    ...options,
   });
 }
 test('all data routes reject missing credentials before touching data', async (t) => {
@@ -157,4 +163,105 @@ test('signed-photo responses cannot be cached', async (t) => {
   const response = await app.inject({ url: `/v1/materials/${user}/url`, headers });
   assert.equal(response.statusCode, 200);
   assert.equal(response.headers['cache-control'], 'no-store');
+});
+
+test('one student cannot exhaust another student or load-balancer health checks', async (t) => {
+  const app = await setup({}, async () => {}, {
+    verify: async (token) =>
+      token === 'second-token' ? '8bf9233f-30ba-4b56-8a3a-e0d641a7ad24' : user,
+  });
+  t.after(() => app.close());
+  for (let i = 0; i < 120; i++) {
+    assert.equal((await app.inject({ url: '/v1/me', headers })).statusCode, 200);
+  }
+  const limited = await app.inject({ url: '/v1/me', headers });
+  assert.equal(limited.statusCode, 429);
+  assert.ok(limited.headers['retry-after']);
+  assert.equal(
+    (
+      await app.inject({
+        url: '/v1/me',
+        headers: { authorization: 'Bearer second-token' },
+      })
+    ).statusCode,
+    200,
+  );
+  for (let i = 0; i < 125; i++) {
+    assert.equal((await app.inject('/health/live')).statusCode, 200);
+    assert.equal((await app.inject('/health/ready')).statusCode, 200);
+  }
+  // A forged forwarded IP does not reset the authenticated user's quota.
+  assert.equal(
+    (
+      await app.inject({
+        url: '/v1/me',
+        headers: { ...headers, 'x-forwarded-for': '203.0.113.12' },
+      })
+    ).statusCode,
+    429,
+  );
+});
+
+test('AI quotas use verified users before reaching the provider', async (t) => {
+  const app = await setup({}, async () => {}, {
+    verify: async (token) =>
+      token === 'second-token' ? '8bf9233f-30ba-4b56-8a3a-e0d641a7ad24' : user,
+  });
+  t.after(() => app.close());
+  for (let i = 0; i < 10; i++) {
+    assert.equal(
+      (await app.inject({ method: 'POST', url: '/v1/ai/ask', headers, payload: {} })).statusCode,
+      400,
+    );
+  }
+  assert.equal(
+    (await app.inject({ method: 'POST', url: '/v1/ai/ask', headers, payload: {} })).statusCode,
+    429,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: 'POST',
+        url: '/v1/ai/ask',
+        headers: { authorization: 'Bearer second-token' },
+        payload: {},
+      })
+    ).statusCode,
+    400,
+  );
+});
+
+test('request logs retain correlation and latency without search text or credentials', async (t) => {
+  let log = '';
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      log += chunk.toString();
+      callback();
+    },
+  });
+  const app = await setup({ searchProfiles: async () => [] }, async () => {}, {
+    logger: { stream },
+  });
+  t.after(() => app.close());
+  const response = await app.inject({
+    url: '/v1/profiles?q=private-student-name',
+    headers: { ...headers, cookie: 'private-session', 'x-request-id': 'untrusted-request-id' },
+  });
+  assert.equal(response.statusCode, 200);
+  const requestId = response.headers['x-request-id'];
+  assert.ok(requestId);
+  assert.notEqual(requestId, 'untrusted-request-id');
+  const record = JSON.parse(log.trim());
+  assert.equal(record.reqId, requestId);
+  assert.equal(record.route, '/v1/profiles');
+  assert.equal(record.statusCode, 200);
+  assert.equal(typeof record.responseTime, 'number');
+  for (const secret of [
+    'private-student-name',
+    'test-token',
+    'private-session',
+    'untrusted-request-id',
+  ]) {
+    assert.ok(!log.includes(secret), secret);
+  }
 });

@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { LogController, type FastifyServerOptions } from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { randomUUID } from 'node:crypto';
@@ -30,31 +30,56 @@ export async function buildApp(deps: {
   ai: Ai;
   ping: () => Promise<void>;
   origins: string[];
-  logger?: boolean;
+  logger?: boolean | FastifyServerOptions['logger'];
 }) {
   const app = Fastify({
     logger: deps.logger
       ? {
+          ...(typeof deps.logger === 'object' ? deps.logger : {}),
           redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers.set-cookie'],
           level: 'info',
         }
       : false,
+    // Default request logging includes the URL query (profile searches, for example).
+    // Log only the route template and timing after the response instead.
+    logController: new LogController({ disableRequestLogging: true }),
     genReqId: () => randomUUID(),
     requestIdHeader: false,
     bodyLimit: 256 * 1024,
     requestTimeout: 90000,
-    connectionTimeout: 10000,
+    connectionTimeout: 100000,
   });
   const repo = deps.repo;
   await app.register(cors, {
     origin: deps.origins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
+    exposedHeaders: ['X-Request-Id'],
   });
-  await app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
+  await app.register(rateLimit, {
+    max: 120,
+    timeWindow: '1 minute',
+    // Scoped authentication hooks run before this route hook. Do not trust
+    // forwarded headers or pool all signed-in students behind the ALB's IP.
+    keyGenerator: (request) => (request.userId ? `user:${request.userId}` : `ip:${request.ip}`),
+  });
   app.decorateRequest('userId', '');
-  app.addHook('onSend', async (_request, reply) => {
-    reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
+  app.addHook('onSend', async (request, reply) => {
+    reply
+      .header('Cache-Control', 'no-store')
+      .header('X-Content-Type-Options', 'nosniff')
+      .header('X-Request-Id', request.id);
+  });
+  app.addHook('onResponse', async (request, reply) => {
+    request.log.info(
+      {
+        method: request.method,
+        route: request.routeOptions.url ?? 'unmatched',
+        statusCode: reply.statusCode,
+        responseTime: reply.elapsedTime,
+      },
+      'Request completed',
+    );
   });
   app.setErrorHandler((error, request, reply) => {
     let status = 500;
@@ -95,8 +120,8 @@ export async function buildApp(deps: {
       );
     void reply.status(status).send({ error: { code, message, requestId: request.id } });
   });
-  app.get('/health/live', async () => ({ status: 'ok' }));
-  app.get('/health/ready', async (_request, reply) => {
+  app.get('/health/live', { config: { rateLimit: false } }, async () => ({ status: 'ok' }));
+  app.get('/health/ready', { config: { rateLimit: false } }, async (_request, reply) => {
     try {
       await deps.ping();
       return { status: 'ready' };
