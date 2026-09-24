@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
 import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
 import { Radius } from '@/constants/theme';
@@ -89,42 +90,26 @@ export default function ProfileScreen() {
         actions={
           first ? undefined : editing ? (
             <>
-              <Pressable
-                accessibilityRole="button"
+              <WorkspaceButton
+                label="Cancel"
                 accessibilityLabel="Cancel editing"
-                accessibilityState={{ disabled: busy }}
                 disabled={busy}
                 onPress={() => setEditing(false)}
-                style={({ pressed, hovered }) => [
-                  styles.secondary,
-                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                  (pressed || hovered) && { backgroundColor: theme.backgroundHover },
-                  busy && styles.dim,
-                ]}
-              >
-                <ThemedText style={styles.secondaryLabel}>Cancel</ThemedText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
+              />
+              <WorkspaceButton
+                primary
+                icon="check"
+                label={busy ? 'Saving…' : 'Save'}
                 accessibilityLabel="Save profile"
-                accessibilityState={{ disabled: busy || incomplete, busy }}
-                disabled={busy || incomplete}
+                disabled={incomplete}
+                busy={busy}
                 onPress={() => void save()}
-                style={({ pressed, hovered }) => [
-                  styles.primary,
-                  { backgroundColor: theme.accent },
-                  (pressed || hovered || busy || incomplete) && styles.dim,
-                ]}
-              >
-                <AppIcon name="check" size={14} color={theme.accentText} />
-                <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
-                  {busy ? 'Saving…' : 'Save'}
-                </ThemedText>
-              </Pressable>
+              />
             </>
           ) : (
-            <Pressable
-              accessibilityRole="button"
+            <WorkspaceButton
+              primary
+              label="Edit"
               accessibilityLabel="Edit profile"
               onPress={() => {
                 setName(profile?.name ?? '');
@@ -133,16 +118,7 @@ export default function ProfileScreen() {
                 setEditing(true);
                 setSaved(false);
               }}
-              style={({ pressed, hovered }) => [
-                styles.primary,
-                { backgroundColor: theme.accent },
-                (pressed || hovered) && styles.dim,
-              ]}
-            >
-              <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
-                Edit
-              </ThemedText>
-            </Pressable>
+            />
           )
         }
       />
@@ -327,24 +303,6 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  primary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    height: 30,
-    paddingHorizontal: 11,
-    borderRadius: Radius.medium,
-  },
-  primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
-  secondary: {
-    justifyContent: 'center',
-    height: 30,
-    paddingHorizontal: 11,
-    borderWidth: 1,
-    borderRadius: Radius.medium,
-  },
-  secondaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
   dim: { opacity: 0.85 },
   notice: {
     flexDirection: 'row',

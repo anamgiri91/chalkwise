@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar, since } from '@/components/ui/DataRow';
+import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
 import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -61,21 +62,13 @@ export default function HomeScreen() {
         title="Overview"
         actions={
           <>
-            <Pressable
-              accessibilityRole="button"
+            <WorkspaceButton
+              primary
+              icon="plus"
+              label="Capture"
               accessibilityLabel="Capture class material"
               onPress={() => router.push('/capture')}
-              style={({ pressed, hovered }) => [
-                styles.primary,
-                { backgroundColor: theme.accent },
-                (pressed || hovered) && styles.dim,
-              ]}
-            >
-              <AppIcon name="plus" size={14} color={theme.accentText} />
-              <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
-                Capture
-              </ThemedText>
-            </Pressable>
+            />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Your profile"
@@ -237,15 +230,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  primary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 30,
-    paddingHorizontal: 11,
-    borderRadius: Radius.medium,
-  },
-  primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
   avatar: {
     width: 30,
     height: 30,

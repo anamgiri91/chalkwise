@@ -5,6 +5,7 @@ import { AddCourseSheet } from '@/components/AddCourseSheet';
 import { ThemedText } from '@/components/themed-text';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
 import { Radius } from '@/constants/theme';
@@ -72,34 +73,19 @@ export default function CoursesScreen() {
           title="Courses"
           actions={
             <>
-              <Pressable
-                accessibilityRole="button"
+              <WorkspaceButton
+                label={browse ? 'Done' : 'Catalog'}
                 accessibilityLabel={browse ? 'Close the course catalog' : 'Open the course catalog'}
-                accessibilityState={{ expanded: browse }}
+                expanded={browse}
                 onPress={() => setBrowse((value) => !value)}
-                style={({ pressed, hovered }) => [
-                  styles.secondary,
-                  { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                  (pressed || hovered) && { backgroundColor: theme.backgroundHover },
-                ]}
-              >
-                <ThemedText style={styles.secondaryLabel}>{browse ? 'Done' : 'Catalog'}</ThemedText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
+              />
+              <WorkspaceButton
+                primary
+                icon="plus"
+                label="New course"
                 accessibilityLabel="Create a course"
                 onPress={() => setAdding(true)}
-                style={({ pressed, hovered }) => [
-                  styles.primary,
-                  { backgroundColor: theme.accent },
-                  (pressed || hovered) && styles.dim,
-                ]}
-              >
-                <AppIcon name="plus" size={14} color={theme.accentText} />
-                <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
-                  New course
-                </ThemedText>
-              </Pressable>
+              />
             </>
           }
         />
@@ -250,23 +236,6 @@ export default function CoursesScreen() {
 }
 
 const styles = StyleSheet.create({
-  primary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 30,
-    paddingHorizontal: 11,
-    borderRadius: Radius.medium,
-  },
-  primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
-  secondary: {
-    justifyContent: 'center',
-    height: 30,
-    paddingHorizontal: 11,
-    borderWidth: 1,
-    borderRadius: Radius.medium,
-  },
-  secondaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
   dim: { opacity: 0.85 },
   notice: {
     flexDirection: 'row',

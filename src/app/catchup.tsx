@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { AddFriendSheet } from '@/components/AddFriendSheet';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar, since } from '@/components/ui/DataRow';
+import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
 import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
 import { Radius } from '@/constants/theme';
@@ -93,22 +94,14 @@ export default function CatchupScreen() {
           title="CatchUp"
           actions={
             canAddFriends ? (
-              <Pressable
-                accessibilityRole="button"
+              <WorkspaceButton
+                primary
+                icon="plus"
+                label="Add classmate"
                 accessibilityLabel="Add a classmate"
                 accessibilityHint="Opens classmate search and incoming friend requests"
                 onPress={() => setFriendOpen(true)}
-                style={({ pressed, hovered }) => [
-                  styles.primary,
-                  { backgroundColor: theme.accent },
-                  (pressed || hovered) && styles.dim,
-                ]}
-              >
-                <AppIcon name="plus" size={14} color={theme.accentText} />
-                <ThemedText style={[styles.primaryLabel, { color: theme.accentText }]}>
-                  Add classmate
-                </ThemedText>
-              </Pressable>
+              />
             ) : null
           }
         />
@@ -271,15 +264,6 @@ export default function CatchupScreen() {
 }
 
 const styles = StyleSheet.create({
-  primary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 30,
-    paddingHorizontal: 11,
-    borderRadius: Radius.medium,
-  },
-  primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
   dim: { opacity: 0.85 },
   faded: { opacity: 0.5 },
   notice: {
