@@ -290,7 +290,8 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 13, lineHeight: 19, fontWeight: '500' },
   rowSubtitle: { fontSize: 12, lineHeight: 18 },
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 14, flexShrink: 0 },
-  meta: { fontSize: 12, lineHeight: 18, width: 104, textAlign: 'right' },
+  // A minimum keeps short values in aligned columns; longer values grow instead of truncating.
+  meta: { fontSize: 12, lineHeight: 18, minWidth: 104, maxWidth: 280, textAlign: 'right' },
   compactMeta: { flexWrap: 'wrap', flexShrink: 1, gap: 8, paddingTop: 1 },
   compactMetaText: { width: 'auto', flexShrink: 1, textAlign: 'left' },
   trailing: { paddingRight: 12, flexShrink: 0 },

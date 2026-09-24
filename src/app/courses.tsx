@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { AddCourseSheet } from '@/components/AddCourseSheet';
 import { ThemedText } from '@/components/themed-text';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -14,6 +14,8 @@ import type { Course } from '@/types';
 
 export default function CoursesScreen() {
   const theme = useTheme();
+  // Narrow rows stack the course details under the name instead of truncating it.
+  const narrow = useWindowDimensions().width < 600;
   const [courses, setCourses] = useState<Course[]>([]);
   const [catalog, setCatalog] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,28 +165,39 @@ export default function CoursesScreen() {
                       onPress={() => open(course.id)}
                       style={({ pressed, hovered }) => [
                         styles.rowMain,
+                        narrow && styles.rowStacked,
                         (pressed || hovered) && { backgroundColor: theme.backgroundHover },
                       ]}
                     >
                       <ThemedText numberOfLines={1} style={styles.rowTitle}>
                         {course.name}
                       </ThemedText>
-                      <View style={styles.rowMeta}>
+                      <View style={[styles.rowMeta, narrow && styles.rowMetaStacked]}>
                         <ThemedText
                           numberOfLines={1}
-                          style={[styles.meta, { color: theme.textSecondary }]}
+                          style={[
+                            styles.meta,
+                            narrow && styles.metaStacked,
+                            { color: theme.textSecondary },
+                          ]}
                         >
                           {course.code}
                         </ThemedText>
                         {course.professor ? (
                           <ThemedText
                             numberOfLines={1}
-                            style={[styles.meta, { color: theme.textSecondary }]}
+                            style={[
+                              styles.meta,
+                              narrow && styles.metaStacked,
+                              { color: theme.textSecondary },
+                            ]}
                           >
                             {course.professor}
                           </ThemedText>
                         ) : null}
-                        <AppIcon name="arrow" size={14} color={theme.textTertiary} />
+                        {narrow ? null : (
+                          <AppIcon name="arrow" size={14} color={theme.textTertiary} />
+                        )}
                       </View>
                     </Pressable>
                     {browse ? (
@@ -283,6 +296,15 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 13.5, lineHeight: 19, fontWeight: '500', flexShrink: 1, flexGrow: 1 },
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 14, flexShrink: 0 },
   meta: { fontSize: 12.5, lineHeight: 18, minWidth: 92, textAlign: 'right' },
+  rowStacked: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: 8,
+  },
+  rowMetaStacked: { flexShrink: 1, maxWidth: '100%', gap: 10 },
+  metaStacked: { minWidth: 0, flexShrink: 1, textAlign: 'left' },
   leave: {
     justifyContent: 'center',
     height: 26,
