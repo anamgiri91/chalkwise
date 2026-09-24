@@ -50,6 +50,9 @@ export const Spacing = {
   six: 64,
 } as const;
 
+/** Backdrop behind dialogs and sheets; neutral so it suits both schemes. */
+export const Scrim = 'rgba(12, 14, 18, 0.55)';
+
 /** Tighter than the previous rounded cards; a workspace reads as panels, not pills. */
 export const Radius = { small: 4, medium: 6, large: 8, pill: 999 } as const;
 

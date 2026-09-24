@@ -49,6 +49,8 @@ test('state and accent colours stay readable where they are used', () => {
     assert.ok(contrast(t.accentText, t.accent) >= 4.5, `${scheme} accent label`);
     assert.ok(contrast(t.accent, t.accentSurface) >= 4.5, `${scheme} accent on its own tint`);
     assert.ok(contrast(t.warning, t.warningSurface) >= 4.5, `${scheme} warning on its own tint`);
+    assert.ok(contrast(t.success, t.successSurface) >= 4.5, `${scheme} success on its own tint`);
+    assert.ok(contrast(t.text, t.successSurface) >= 4.5, `${scheme} body text in a success`);
     assert.ok(contrast(t.text, t.warningSurface) >= 4.5, `${scheme} body text in a warning`);
   }
 });
