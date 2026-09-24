@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { AddFriendSheet } from '@/components/AddFriendSheet';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar, since } from '@/components/ui/DataRow';
+import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -126,12 +127,7 @@ export default function CatchupScreen() {
         ) : null}
 
         {loading && !data ? (
-          <View style={styles.loading}>
-            <ActivityIndicator
-              color={theme.textSecondary}
-              accessibilityLabel="Loading shared notebooks"
-            />
-          </View>
+          <SkeletonPage label="Loading shared notebooks" />
         ) : (
           <>
             <Section
@@ -297,7 +293,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.medium,
   },
   noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
-  loading: { paddingVertical: 48, alignItems: 'center' },
   action: {
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -160,12 +161,7 @@ export default function ProfileScreen() {
       ) : null}
 
       {first ? (
-        <View style={styles.loading}>
-          <ActivityIndicator
-            color={theme.textSecondary}
-            accessibilityLabel="Loading your profile"
-          />
-        </View>
+        <SkeletonPage label="Loading your profile" sections={3} />
       ) : (
         <>
           <Section label="Details">
@@ -361,7 +357,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.medium,
   },
   noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
-  loading: { paddingVertical: 48, alignItems: 'center' },
   panel: { gap: 14, padding: 14, borderWidth: 1, borderRadius: Radius.large },
   field: { gap: 6 },
   label: { fontSize: 12.5, lineHeight: 18, fontWeight: '600' },

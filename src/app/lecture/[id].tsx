@@ -1,19 +1,13 @@
 import type { PropsWithChildren } from 'react';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { BackButton } from '@/components/ui/BackButton';
 import { RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { SkeletonPage } from '@/components/ui/Skeleton';
 import { StudyActions } from '@/components/StudyActions';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -322,9 +316,7 @@ export default function LectureNotebookScreen() {
           <BackButton />
           <Toolbar title="Notebook" />
         </View>
-        <View style={styles.loading}>
-          <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Opening notebook" />
-        </View>
+        <SkeletonPage label="Opening notebook" />
       </Screen>
     );
   if (error)
@@ -596,7 +588,6 @@ export default function LectureNotebookScreen() {
 const styles = StyleSheet.create({
   header: { gap: 8 },
   metaText: { fontSize: 12.5, lineHeight: 18 },
-  loading: { paddingVertical: 48, alignItems: 'center' },
   notice: {
     flexDirection: 'row',
     alignItems: 'center',

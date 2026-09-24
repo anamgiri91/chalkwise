@@ -1,11 +1,12 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { BackButton } from '@/components/ui/BackButton';
 import { Row, RowGroup, Section, Toolbar, since } from '@/components/ui/DataRow';
+import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getCourse } from '@/services/courses';
@@ -62,9 +63,12 @@ export default function CourseScreen() {
   if (loading && !data) {
     return (
       <Screen showBottomNav wide>
-        <View style={styles.centered}>
-          <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Loading course" />
+        <BackButton />
+        <View style={styles.skeletonTitle}>
+          <Skeleton width={220} height={22} />
+          <Skeleton width={160} height={11} />
         </View>
+        <SkeletonList label="Loading course" rows={2} />
       </Screen>
     );
   }
@@ -124,6 +128,7 @@ export default function CourseScreen() {
 }
 
 const styles = StyleSheet.create({
+  skeletonTitle: { gap: 10, marginBottom: 12 },
   primary: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -135,5 +140,4 @@ const styles = StyleSheet.create({
   primaryLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
   dim: { opacity: 0.85 },
   meta: { fontSize: 12.5, lineHeight: 18, marginTop: -4 },
-  centered: { paddingVertical: 48, alignItems: 'center' },
 });

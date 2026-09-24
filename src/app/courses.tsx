@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { AddCourseSheet } from '@/components/AddCourseSheet';
 import { ThemedText } from '@/components/themed-text';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -144,9 +145,7 @@ export default function CoursesScreen() {
 
         <Section label="My courses" count={courses.length}>
           {loading && !courses.length ? (
-            <View style={styles.loading}>
-              <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Loading courses" />
-            </View>
+            <SkeletonList label="Loading courses" rows={2} withHeading={false} />
           ) : (
             <RowGroup>
               {courses.length ? (
@@ -280,7 +279,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.medium,
   },
   noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
-  loading: { paddingVertical: 48, alignItems: 'center' },
   // Enrolled rows carry a second control, so the row is a container with two
   // sibling press targets: nesting one Pressable inside another fires both.
   row: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },

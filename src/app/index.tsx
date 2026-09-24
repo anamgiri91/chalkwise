@@ -1,10 +1,11 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar, since } from '@/components/ui/DataRow';
+import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getStudyDashboard, getWorkspaceCapabilities } from '@/services/study';
@@ -122,9 +123,7 @@ export default function HomeScreen() {
       ) : null}
 
       {loading && !data ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Loading workspace" />
-        </View>
+        <SkeletonPage label="Loading workspace" sections={3} />
       ) : query ? (
         <Section label="Search results" count={results.length}>
           <RowGroup>
@@ -277,6 +276,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.medium,
   },
   noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
-  loading: { paddingVertical: 48, alignItems: 'center' },
   footnote: { fontSize: 12, lineHeight: 16, marginTop: 4 },
 });
