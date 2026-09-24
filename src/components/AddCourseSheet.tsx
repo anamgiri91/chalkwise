@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -10,10 +9,12 @@ import {
   StyleSheet,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Brand, Fonts } from '@/constants/theme';
+import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
+import { Brand, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { createCourse } from '@/services/courses';
@@ -48,6 +49,8 @@ export function AddCourseSheet({
 }: Props) {
   const theme = useTheme();
   const dark = theme.background !== Brand.paper;
+  // Wide screens get a centered dialog; a full-width bottom sheet suits phones only.
+  const dialog = useWindowDimensions().width >= 720;
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -125,7 +128,7 @@ export function AddCourseSheet({
     {
       color: theme.text,
       backgroundColor: theme.backgroundElement,
-      borderColor: theme.backgroundSelected,
+      borderColor: theme.borderStrong,
     },
   ];
 
@@ -186,30 +189,34 @@ export function AddCourseSheet({
     <Modal
       transparent
       visible={visible}
-      animationType="slide"
+      animationType={dialog ? 'fade' : 'slide'}
       presentationStyle="overFullScreen"
       onRequestClose={close}
     >
       <Pressable
-        style={styles.backdrop}
+        style={[styles.backdrop, dialog && styles.dialogBackdrop]}
         onPress={close}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={[styles.frame, dialog && styles.dialogFrame]}
         >
           <Pressable
             style={[
               styles.sheet,
+              dialog && [styles.dialog, { borderColor: theme.border }],
               { backgroundColor: theme.background },
             ]}
             onPress={(event) => event.stopPropagation()}
           >
-            <View
-              style={[
-                styles.handle,
-                { backgroundColor: theme.backgroundSelected },
-              ]}
-            />
+            {dialog ? null : (
+              <View
+                style={[
+                  styles.handle,
+                  { backgroundColor: theme.backgroundSelected },
+                ]}
+              />
+            )}
 
             <ScrollView
               keyboardShouldPersistTaps="handled"
@@ -217,14 +224,10 @@ export function AddCourseSheet({
               contentContainerStyle={styles.content}
             >
               <ThemedText
-                themeColor="textSecondary"
-                style={styles.eyebrow}
+                accessibilityRole="header"
+                style={[styles.title, { color: theme.text }]}
               >
-                CHALKWISE COURSES
-              </ThemedText>
-
-              <ThemedText style={[styles.title, { color: theme.text }]}>
-                Add a course.
+                Add a course
               </ThemedText>
 
               <ThemedText
@@ -240,7 +243,7 @@ export function AddCourseSheet({
                   themeColor="textSecondary"
                   style={styles.label}
                 >
-                  COURSE CODE
+                  Course code
                 </ThemedText>
 
                 <TextInput
@@ -248,7 +251,7 @@ export function AddCourseSheet({
                   onChangeText={setCode}
                   onFocus={() => setFocused('code')}
                   editable={!saving}
-                  placeholder="CS 3358"
+                  placeholder="e.g. CS 1428"
                   placeholderTextColor={theme.textSecondary}
                   autoCapitalize="characters"
                   autoCorrect={false}
@@ -264,7 +267,7 @@ export function AddCourseSheet({
                   themeColor="textSecondary"
                   style={styles.label}
                 >
-                  COURSE NAME
+                  Course name
                 </ThemedText>
 
                 <TextInput
@@ -272,7 +275,7 @@ export function AddCourseSheet({
                   onChangeText={setName}
                   onFocus={() => setFocused('name')}
                   editable={!saving}
-                  placeholder="Data Structures & Algorithms"
+                  placeholder="e.g. Foundations of Computer Science"
                   placeholderTextColor={theme.textSecondary}
                   accessibilityLabel="Course name, required"
                   style={inputStyle}
@@ -286,7 +289,7 @@ export function AddCourseSheet({
                   themeColor="textSecondary"
                   style={styles.label}
                 >
-                  PROFESSOR (OPTIONAL)
+                  Professor (optional)
                 </ThemedText>
 
                 <TextInput
@@ -294,7 +297,7 @@ export function AddCourseSheet({
                   onChangeText={setProfessor}
                   onFocus={() => setFocused(null)}
                   editable={!saving}
-                  placeholder="Professor Seaman"
+                  placeholder="e.g. Dr. Rivera"
                   placeholderTextColor={theme.textSecondary}
                   accessibilityLabel="Professor, optional"
                   style={inputStyle}
@@ -313,50 +316,15 @@ export function AddCourseSheet({
                 </ThemedText>
               ) : null}
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Add course"
-                accessibilityState={{ disabled: !ready || saving, busy: saving }}
-                disabled={!ready || saving}
-                onPress={submit}
-                style={({ pressed }) => [
-                  styles.action,
-                  { backgroundColor: dark ? Brand.lime : Brand.forest },
-                  (pressed || !ready || saving) && styles.dim,
-                ]}
-              >
-                {saving ? (
-                  <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
-                ) : (
-                  <ThemedText
-                    style={[
-                      styles.actionText,
-                      { color: dark ? Brand.ink : '#FFFFFF' },
-                    ]}
-                  >
-                    Add course
-                  </ThemedText>
-                )}
-              </Pressable>
-
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-                accessibilityState={{ disabled: saving }}
-                disabled={saving}
-                onPress={close}
-                style={({ pressed }) => [
-                  styles.action,
-                  { backgroundColor: theme.backgroundSelected },
-                  pressed && styles.dim,
-                ]}
-              >
-                <ThemedText
-                  style={[styles.actionText, { color: theme.text }]}
-                >
-                  Cancel
-                </ThemedText>
-              </Pressable>
+              <View style={[styles.actions, dialog && styles.dialogActions]}>
+                <WorkspaceButton
+                  primary
+                  label={saving ? 'Adding…' : 'Add course'}
+                  onPress={submit}
+                  disabled={!ready || saving}
+                />
+                <WorkspaceButton label="Cancel" onPress={close} disabled={saving} />
+              </View>
             </ScrollView>
           </Pressable>
         </KeyboardAvoidingView>
@@ -372,13 +340,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(9,23,17,0.66)',
   },
 
-  sheet: {
+  dialogBackdrop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+
+  // The height limit belongs on this frame: a percentage on the sheet itself resolves
+  // against a wrapper that grows to fit the sheet, which clipped the last button.
+  frame: {
     maxHeight: '90%',
+  },
+
+  dialogFrame: {
+    width: '100%',
+    maxWidth: 480,
+    maxHeight: '100%',
+  },
+
+  sheet: {
+    flexShrink: 1,
     borderTopLeftRadius: 34,
     borderTopRightRadius: 34,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 36,
+  },
+
+  dialog: {
+    borderRadius: Radius.large,
+    borderTopLeftRadius: Radius.large,
+    borderTopRightRadius: Radius.large,
+    borderWidth: 1,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
 
   content: {
@@ -394,17 +389,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-
   title: {
-    fontFamily: Fonts.serif,
-    fontSize: 30,
-    lineHeight: 36,
-    letterSpacing: -1,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '600',
   },
 
   description: {
@@ -417,31 +405,31 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
+    fontSize: 12.5,
+    lineHeight: 18,
+    fontWeight: '600',
   },
 
   input: {
-    minHeight: 54,
-    borderRadius: 17,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    lineHeight: 23,
+    minHeight: 44,
+    borderRadius: Radius.medium,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    lineHeight: 22,
     borderWidth: 1,
   },
 
   suggestions: {
-    borderRadius: 17,
+    borderRadius: Radius.medium,
     borderWidth: 1,
     overflow: 'hidden',
   },
 
   suggestion: {
-    minHeight: 54,
+    minHeight: 44,
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 2,
   },
@@ -456,18 +444,14 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
 
-  action: {
-    minHeight: 54,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
+  actions: {
+    gap: 8,
+    paddingTop: 4,
   },
 
-  actionText: {
-    fontWeight: '700',
-  },
-
-  dim: {
-    opacity: 0.6,
+  // Dialog buttons sit on one row, trailing, with the primary action last.
+  dialogActions: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'flex-start',
   },
 });
