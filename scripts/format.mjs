@@ -8,6 +8,8 @@ const paths = [
   'server/tests',
   'tests',
   'scripts/format.mjs',
+  'scripts/build-release.mjs',
+  'server/infra/web-router.js',
   'src/features/study',
   'src/features/courses/matchCourse.ts',
   'src/lib/api.ts',
