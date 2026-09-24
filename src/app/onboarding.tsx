@@ -1,17 +1,18 @@
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ChalkwiseLogo } from '@/components/ChalkwiseLogo';
 import { ThemedText } from '@/components/themed-text';
+import { AppButton } from '@/components/ui/AppButton';
+import { AppTextInput, FormError } from '@/components/ui/AppTextInput';
 import { Screen } from '@/components/ui/Screen';
-import { Brand, Fonts } from '@/constants/theme';
+import { Fonts, Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { saveMyProfile } from '@/services/auth';
 import { years, type Year } from '@/types';
 
 export default function OnboardingScreen() {
   const theme = useTheme();
-  const dark = theme.background !== Brand.paper;
   const [name, setName] = useState('');
   const [year, setYear] = useState<Year | null>(null);
   const [major, setMajor] = useState('');
@@ -35,12 +36,6 @@ export default function OnboardingScreen() {
     }
   }
 
-  const input = [styles.input, {
-    color: theme.text,
-    backgroundColor: theme.backgroundElement,
-    borderColor: theme.backgroundSelected,
-  }];
-
   return (
     <Screen avoidKeyboard>
       <View style={styles.header}>
@@ -57,105 +52,79 @@ export default function OnboardingScreen() {
         </ThemedText>
       </View>
 
-      <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>FULL NAME</ThemedText>
-        <TextInput
+      <View style={styles.form}>
+        <AppTextInput
+          label="Full name"
+          accessibilityLabel="Full name, required"
           value={name}
           onChangeText={setName}
           editable={!busy}
-          placeholder="Alex Rivera"
-          placeholderTextColor={theme.textSecondary}
+          placeholder="e.g. Alex Rivera"
           autoCapitalize="words"
+          autoComplete="name"
           returnKeyType="next"
           submitBehavior="submit"
           onSubmitEditing={() => majorRef.current?.focus()}
-          accessibilityLabel="Full name, required"
-          style={input}
         />
-      </View>
 
-      <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>YEAR</ThemedText>
-        <View style={styles.chips}>
-          {years.map((option) => {
-            const active = year === option;
-            return (
-              <Pressable
-                key={option}
-                accessibilityRole="button"
-                accessibilityLabel={option}
-                accessibilityState={{ selected: active, disabled: busy }}
-                disabled={busy}
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setYear(option);
-                }}
-                style={({ pressed }) => [
-                  styles.chip,
-                  {
-                    backgroundColor: active
-                      ? (dark ? Brand.lime : Brand.forest)
-                      : theme.backgroundElement,
-                    borderColor: active
-                      ? (dark ? Brand.lime : Brand.forest)
-                      : theme.backgroundSelected,
-                  },
-                  pressed && styles.dim,
-                ]}
-              >
-                <ThemedText
-                  style={[
-                    styles.chipText,
-                    { color: active ? (dark ? Brand.ink : '#FFFFFF') : theme.text },
+        <View style={styles.field}>
+          <ThemedText nativeID="year-label" style={[styles.label, { color: theme.textSecondary }]}>
+            Year
+          </ThemedText>
+          <View style={styles.chips} accessibilityRole="radiogroup" aria-labelledby="year-label">
+            {years.map((option) => {
+              const active = year === option;
+              return (
+                <Pressable
+                  key={option}
+                  accessibilityRole="radio"
+                  accessibilityLabel={option}
+                  accessibilityState={{ checked: active, disabled: busy }}
+                  disabled={busy}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setYear(option);
+                  }}
+                  style={({ pressed, hovered }) => [
+                    styles.chip,
+                    {
+                      backgroundColor: active
+                        ? theme.accent
+                        : hovered || pressed
+                          ? theme.backgroundHover
+                          : theme.backgroundElement,
+                      borderColor: active ? theme.accent : theme.borderStrong,
+                    },
                   ]}
                 >
-                  {option}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
+                  <ThemedText
+                    style={[styles.chipText, { color: active ? theme.accentText : theme.text }]}
+                  >
+                    {option}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>MAJOR OR PROGRAM</ThemedText>
-        <TextInput
+        <AppTextInput
           ref={majorRef}
+          label="Major or program"
+          accessibilityLabel="Major or program, required"
           value={major}
           onChangeText={setMajor}
           editable={!busy}
-          placeholder="Computer Science"
-          placeholderTextColor={theme.textSecondary}
+          placeholder="e.g. Computer Science"
           returnKeyType="done"
           submitBehavior="blurAndSubmit"
           onSubmitEditing={submit}
-          accessibilityLabel="Major or program, required"
-          style={input}
         />
       </View>
 
-      {error ? (
-        <ThemedText accessibilityLiveRegion="polite" style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}>
-          {error}
-        </ThemedText>
-      ) : null}
+      <FormError message={error} />
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Enter Chalkwise"
-        accessibilityState={{ disabled: !ready || busy, busy }}
-        disabled={!ready || busy}
-        onPress={submit}
-        style={({ pressed }) => [
-          styles.action,
-          { backgroundColor: dark ? Brand.lime : Brand.forest },
-          (pressed || !ready || busy) && styles.dim,
-        ]}
-      >
-        {busy
-          ? <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
-          : <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>Enter Chalkwise  →</ThemedText>}
-      </Pressable>
+      <AppButton title="Enter Chalkwise" busy={busy} disabled={!ready} onPress={submit} />
     </Screen>
   );
 }
@@ -164,20 +133,16 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   intro: { gap: 12 },
   title: { fontFamily: Fonts.serif, fontWeight: '400', letterSpacing: -1.2 },
-  field: { gap: 7 },
-  label: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  input: {
-    minHeight: 54, borderRadius: 17, paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 16, lineHeight: 23, borderWidth: 1,
-  },
+  form: { gap: 16 },
+  field: { gap: 6 },
+  label: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    minHeight: 44, justifyContent: 'center', paddingHorizontal: 16,
-    borderRadius: 14, borderWidth: 1,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
   },
   chipText: { fontSize: 14, fontWeight: '600' },
-  error: { fontSize: 14, lineHeight: 21 },
-  action: { minHeight: 54, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  actionText: { fontWeight: '700' },
-  dim: { opacity: 0.6 },
 });

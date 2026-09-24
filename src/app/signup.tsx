@@ -1,19 +1,16 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { ChalkwiseLogo } from '@/components/ChalkwiseLogo';
 import { ThemedText } from '@/components/themed-text';
 import { AppButton } from '@/components/ui/AppButton';
-import { PasswordField } from '@/components/ui/PasswordField';
+import { AppTextInput, FormError } from '@/components/ui/AppTextInput';
 import { Screen } from '@/components/ui/Screen';
-import { Brand, Fonts } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Fonts } from '@/constants/theme';
 import { signUp, supportsEmailCode, confirmEmail, resendConfirmationCode } from '@/services/auth';
 
 export default function SignupScreen() {
-  const theme = useTheme();
-  const dark = theme.background !== Brand.paper;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const passwordRef = useRef<TextInput>(null);
@@ -95,30 +92,27 @@ export default function SignupScreen() {
 
         {supportsEmailCode() ? (
           <>
-            <TextInput
+            <AppTextInput
+              label="Confirmation code"
+              accessibilityLabel="Email confirmation code"
               value={code}
               onChangeText={setCode}
               editable={!busy}
               keyboardType="number-pad"
               textContentType="oneTimeCode"
               autoComplete="one-time-code"
-              accessibilityLabel="Email confirmation code"
-              placeholder="Confirmation code"
-              placeholderTextColor={theme.textSecondary}
-              style={[
-                styles.input,
-                { color: theme.text, backgroundColor: theme.backgroundElement },
-              ]}
+              placeholder="6-digit code"
             />
             <AppButton
-              title={busy ? 'Please wait…' : 'Confirm email'}
-              disabled={busy || !code.trim()}
+              title="Confirm email"
+              busy={busy}
+              disabled={!code.trim()}
               onPress={confirm}
             />
             <AppButton secondary title="Send another code" disabled={busy} onPress={resend} />
           </>
         ) : null}
-        {error ? <ThemedText accessibilityRole="alert">{error}</ThemedText> : null}
+        <FormError message={error} />
         {confirmationMessage ? (
           <ThemedText accessibilityLiveRegion="polite">{confirmationMessage}</ThemedText>
         ) : null}
@@ -126,15 +120,6 @@ export default function SignupScreen() {
       </Screen>
     );
   }
-
-  const input = [
-    styles.input,
-    {
-      color: theme.text,
-      backgroundColor: theme.backgroundElement,
-      borderColor: theme.backgroundSelected,
-    },
-  ];
 
   return (
     <Screen avoidKeyboard>
@@ -152,16 +137,13 @@ export default function SignupScreen() {
         </ThemedText>
       </View>
 
-      <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>
-          EMAIL
-        </ThemedText>
-        <TextInput
+      <View style={styles.form}>
+        <AppTextInput
+          label="Email"
           value={email}
           onChangeText={setEmail}
           editable={!busy}
           placeholder="you@university.edu"
-          placeholderTextColor={theme.textSecondary}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
@@ -170,78 +152,33 @@ export default function SignupScreen() {
           returnKeyType="next"
           submitBehavior="submit"
           onSubmitEditing={() => passwordRef.current?.focus()}
-          accessibilityLabel="Email"
-          style={input}
         />
-      </View>
-
-      <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>
-          PASSWORD
-        </ThemedText>
-        <PasswordField
+        <AppTextInput
           ref={passwordRef}
+          password
+          label="Password"
+          hint={supportsEmailCode() ? 'At least 12 characters.' : 'At least 6 characters.'}
           value={password}
           onChangeText={setPassword}
           editable={!busy}
-          placeholder={supportsEmailCode() ? 'At least 12 characters' : 'At least 6 characters'}
-          placeholderTextColor={theme.textSecondary}
-          autoCapitalize="none"
+          placeholder="Create a password"
           textContentType="newPassword"
           autoComplete="new-password"
           returnKeyType="go"
           submitBehavior="submit"
           onSubmitEditing={submit}
-          accessibilityLabel="Password"
-          style={input}
         />
       </View>
 
-      {error ? (
-        <ThemedText
-          accessibilityLiveRegion="polite"
-          style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}
-        >
-          {error}
-        </ThemedText>
-      ) : null}
+      <FormError message={error} />
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Create account"
-        accessibilityState={{ disabled: !ready || busy, busy }}
-        disabled={!ready || busy}
-        onPress={submit}
-        style={({ pressed }) => [
-          styles.action,
-          { backgroundColor: dark ? Brand.lime : Brand.forest },
-          (pressed || !ready || busy) && styles.dim,
-        ]}
-      >
-        {busy ? (
-          <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
-        ) : (
-          <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>
-            Create account
-          </ThemedText>
-        )}
-      </Pressable>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="I already have an account"
+      <AppButton title="Create account" busy={busy} disabled={!ready} onPress={submit} />
+      <AppButton
+        secondary
+        title="I already have an account"
         disabled={busy}
         onPress={() => router.replace('/login')}
-        style={({ pressed }) => [
-          styles.action,
-          { backgroundColor: theme.backgroundSelected },
-          pressed && styles.dim,
-        ]}
-      >
-        <ThemedText style={[styles.actionText, { color: theme.text }]}>
-          I already have an account
-        </ThemedText>
-      </Pressable>
+      />
     </Screen>
   );
 }
@@ -250,19 +187,5 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   intro: { gap: 12 },
   title: { fontFamily: Fonts.serif, fontWeight: '400', letterSpacing: -1.2 },
-  field: { gap: 7 },
-  label: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  input: {
-    minHeight: 54,
-    borderRadius: 17,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    lineHeight: 23,
-    borderWidth: 1,
-  },
-  error: { fontSize: 14, lineHeight: 21 },
-  action: { minHeight: 54, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  actionText: { fontWeight: '700' },
-  dim: { opacity: 0.6 },
+  form: { gap: 16 },
 });

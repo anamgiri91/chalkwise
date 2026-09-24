@@ -1,19 +1,16 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { ChalkwiseLogo } from '@/components/ChalkwiseLogo';
 import { ThemedText } from '@/components/themed-text';
-import { PasswordField } from '@/components/ui/PasswordField';
+import { AppTextInput, FormError } from '@/components/ui/AppTextInput';
 import { Screen } from '@/components/ui/Screen';
-import { Brand, Fonts } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Fonts } from '@/constants/theme';
 import { signIn, supportsEmailCode } from '@/services/auth';
 import { AppButton } from '@/components/ui/AppButton';
 
 export default function LoginScreen() {
-  const theme = useTheme();
-  const dark = theme.background !== Brand.paper;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const passwordRef = useRef<TextInput>(null);
@@ -35,15 +32,6 @@ export default function LoginScreen() {
     }
   }
 
-  const input = [
-    styles.input,
-    {
-      color: theme.text,
-      backgroundColor: theme.backgroundElement,
-      borderColor: theme.backgroundSelected,
-    },
-  ];
-
   return (
     <Screen avoidKeyboard>
       <View style={styles.header}>
@@ -60,16 +48,13 @@ export default function LoginScreen() {
         </ThemedText>
       </View>
 
-      <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>
-          EMAIL
-        </ThemedText>
-        <TextInput
+      <View style={styles.form}>
+        <AppTextInput
+          label="Email"
           value={email}
           onChangeText={setEmail}
           editable={!busy}
           placeholder="you@university.edu"
-          placeholderTextColor={theme.textSecondary}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
@@ -78,41 +63,32 @@ export default function LoginScreen() {
           returnKeyType="next"
           submitBehavior="submit"
           onSubmitEditing={() => passwordRef.current?.focus()}
-          accessibilityLabel="Email"
-          style={input}
         />
-      </View>
-
-      <View style={styles.field}>
-        <ThemedText themeColor="textSecondary" style={styles.label}>
-          PASSWORD
-        </ThemedText>
-        <PasswordField
+        <AppTextInput
           ref={passwordRef}
+          password
+          label="Password"
           value={password}
           onChangeText={setPassword}
           editable={!busy}
           placeholder="Your password"
-          placeholderTextColor={theme.textSecondary}
-          autoCapitalize="none"
           textContentType="password"
           autoComplete="current-password"
           returnKeyType="go"
           submitBehavior="submit"
           onSubmitEditing={submit}
-          accessibilityLabel="Password"
-          style={input}
         />
       </View>
 
-      {error ? (
-        <ThemedText
-          accessibilityLiveRegion="polite"
-          style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}
-        >
-          {error}
-        </ThemedText>
-      ) : null}
+      <FormError message={error} />
+
+      <AppButton title="Sign in" busy={busy} disabled={!ready} onPress={submit} />
+      <AppButton
+        secondary
+        title="Create an account"
+        disabled={busy}
+        onPress={() => router.replace('/signup')}
+      />
 
       {supportsEmailCode() ? (
         <AppButton
@@ -121,43 +97,6 @@ export default function LoginScreen() {
           onPress={() => router.push('/account-help')}
         />
       ) : null}
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Sign in"
-        accessibilityState={{ disabled: !ready || busy, busy }}
-        disabled={!ready || busy}
-        onPress={submit}
-        style={({ pressed }) => [
-          styles.action,
-          { backgroundColor: dark ? Brand.lime : Brand.forest },
-          (pressed || !ready || busy) && styles.dim,
-        ]}
-      >
-        {busy ? (
-          <ActivityIndicator color={dark ? Brand.ink : '#FFFFFF'} />
-        ) : (
-          <ThemedText style={[styles.actionText, { color: dark ? Brand.ink : '#FFFFFF' }]}>
-            Sign in
-          </ThemedText>
-        )}
-      </Pressable>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Create an account"
-        disabled={busy}
-        onPress={() => router.replace('/signup')}
-        style={({ pressed }) => [
-          styles.action,
-          { backgroundColor: theme.backgroundSelected },
-          pressed && styles.dim,
-        ]}
-      >
-        <ThemedText style={[styles.actionText, { color: theme.text }]}>
-          Create an account
-        </ThemedText>
-      </Pressable>
     </Screen>
   );
 }
@@ -166,19 +105,5 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   intro: { gap: 12 },
   title: { fontFamily: Fonts.serif, fontWeight: '400', letterSpacing: -1.2 },
-  field: { gap: 7 },
-  label: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  input: {
-    minHeight: 54,
-    borderRadius: 17,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    lineHeight: 23,
-    borderWidth: 1,
-  },
-  error: { fontSize: 14, lineHeight: 21 },
-  action: { minHeight: 54, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  actionText: { fontWeight: '700' },
-  dim: { opacity: 0.6 },
+  form: { gap: 16 },
 });
