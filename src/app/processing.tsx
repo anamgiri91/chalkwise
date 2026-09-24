@@ -4,7 +4,10 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, TextInput, View } from
 
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
-import { Brand, Fonts } from '@/constants/theme';
+import { Fonts, Radius } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+
+type Theme = ReturnType<typeof useTheme>;
 
 import { parseCaptureSession } from '@/features/capture/captureSession';
 import { matchCourse } from '@/features/courses/matchCourse';
@@ -45,6 +48,8 @@ function message(error: unknown): string {
 }
 
 export default function ProcessingScreen() {
+  const theme = useTheme();
+  const styles = useThemedStyles();
   const params = useLocalSearchParams<{
     imageUri?: string | string[];
     imageUris?: string | string[];
@@ -377,7 +382,7 @@ export default function ProcessingScreen() {
                   !
                 </ThemedText>
               ) : (
-                <ActivityIndicator size="small" color={Brand.forest} />
+                <ActivityIndicator size="small" color={theme.accent} />
               )}
             </View>
 
@@ -589,6 +594,7 @@ function Step({
   description: string;
   active?: boolean;
 }) {
+  const styles = useThemedStyles();
   return (
     <View style={styles.step}>
       <View style={[styles.stepNumber, active && styles.stepNumberActive]}>
@@ -607,291 +613,305 @@ function Step({
   );
 }
 
-const styles = StyleSheet.create({
-  page: {
-    width: '100%',
-    gap: 24,
-    paddingBottom: 28,
-  },
+/** Styles depend on the colour scheme, so they are built per scheme and cached. */
+function useThemedStyles() {
+  const theme = useTheme();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tokens change only with the scheme
+  return useMemo(() => createStyles(theme), [theme.isDark]);
+}
 
-  header: {
-    width: '100%',
-    gap: 12,
-  },
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
+    page: {
+      width: '100%',
+      gap: 24,
+      paddingBottom: 28,
+    },
 
-  eyebrow: {
-    color: Brand.forest,
-    fontSize: 11,
-    letterSpacing: 1.5,
-  },
+    header: {
+      width: '100%',
+      gap: 12,
+    },
 
-  title: {
-    fontFamily: Fonts.serif,
-    fontWeight: '400',
-    letterSpacing: -1.2,
-    lineHeight: 46,
-  },
+    eyebrow: {
+      color: theme.accent,
+      fontSize: 11,
+      letterSpacing: 1.5,
+    },
 
-  subtitle: {
-    maxWidth: 520,
-    fontSize: 15,
-    lineHeight: 23,
-  },
+    title: {
+      fontFamily: Fonts.serif,
+      fontWeight: '400',
+      letterSpacing: -1.2,
+      lineHeight: 46,
+    },
 
-  previewSection: {
-    gap: 12,
-  },
+    subtitle: {
+      maxWidth: 520,
+      fontSize: 15,
+      lineHeight: 23,
+    },
 
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
+    previewSection: {
+      gap: 12,
+    },
 
-  readyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#EAF2E8',
-  },
+    previewHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
 
-  readyDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: Brand.forest,
-  },
+    readyBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: Radius.pill,
+      backgroundColor: theme.successSurface,
+    },
 
-  readyText: {
-    color: Brand.forest,
-    fontSize: 11,
-    fontWeight: '700',
-  },
+    readyDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: theme.success,
+    },
 
-  previewRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
+    readyText: {
+      color: theme.success,
+      fontSize: 11,
+      fontWeight: '700',
+    },
 
-  previewCard: {
-    flex: 1,
-    minWidth: 0,
-    height: 150,
-    overflow: 'hidden',
-    borderRadius: 18,
-    backgroundColor: '#E9EDE7',
-    borderWidth: 1,
-    borderColor: '#DDE3DC',
-  },
+    previewRow: {
+      flexDirection: 'row',
+      gap: 10,
+    },
 
-  previewImage: {
-    width: '100%',
-    height: '100%',
-  },
+    previewCard: {
+      flex: 1,
+      minWidth: 0,
+      height: 150,
+      overflow: 'hidden',
+      borderRadius: Radius.large,
+      backgroundColor: theme.backgroundSelected,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
 
-  pageBadge: {
-    position: 'absolute',
-    left: 9,
-    bottom: 9,
-    width: 25,
-    height: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 13,
-    backgroundColor: 'rgba(24, 49, 37, 0.88)',
-  },
+    previewImage: {
+      width: '100%',
+      height: '100%',
+    },
 
-  pageBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
+    pageBadge: {
+      position: 'absolute',
+      left: 9,
+      bottom: 9,
+      width: 25,
+      height: 25,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 13,
+      // Sits on a photo, so it stays dark in both schemes.
+      backgroundColor: 'rgba(12, 14, 18, 0.78)',
+    },
 
-  moreCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-  },
+    pageBadgeText: {
+      color: '#FFFFFF',
+      fontSize: 11,
+      fontWeight: '700',
+    },
 
-  moreNumber: {
-    color: Brand.forest,
-    fontSize: 22,
-    fontWeight: '700',
-  },
+    moreCard: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 10,
+    },
 
-  analysisCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    padding: 18,
-    borderRadius: 22,
-    backgroundColor: '#F2F5EF',
-    borderWidth: 1,
-    borderColor: '#DDE5DA',
-  },
+    moreNumber: {
+      color: theme.accent,
+      fontSize: 22,
+      fontWeight: '700',
+    },
 
-  iconShell: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-  },
+    analysisCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 14,
+      padding: 18,
+      borderRadius: Radius.large,
+      backgroundColor: theme.backgroundElement,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
 
-  alert: {
-    color: Brand.forest,
-    fontSize: 20,
-    fontWeight: '700',
-  },
+    iconShell: {
+      width: 42,
+      height: 42,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: Radius.medium,
+      backgroundColor: theme.backgroundSelected,
+    },
 
-  analysisCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 7,
-  },
+    alert: {
+      color: theme.danger,
+      fontSize: 20,
+      fontWeight: '700',
+    },
 
-  body: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
+    analysisCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 7,
+    },
 
-  pickerSection: {
-    gap: 12,
-  },
+    body: {
+      fontSize: 14,
+      lineHeight: 22,
+    },
 
-  field: {
-    gap: 6,
-    paddingTop: 4,
-  },
+    pickerSection: {
+      gap: 12,
+    },
 
-  fieldLabel: {
-    color: '#5F6A61',
-    fontSize: 10,
-    letterSpacing: 1.2,
-  },
+    field: {
+      gap: 6,
+      paddingTop: 4,
+    },
 
-  input: {
-    minHeight: 50,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    lineHeight: 22,
-    color: Brand.ink,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DDE5DA',
-  },
+    fieldLabel: {
+      color: theme.textSecondary,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: '600',
+    },
 
-  orLabel: {
-    paddingTop: 4,
-    fontSize: 10,
-    letterSpacing: 1.2,
-  },
+    input: {
+      minHeight: 46,
+      borderRadius: Radius.medium,
+      paddingHorizontal: 12,
+      paddingVertical: 11,
+      fontSize: 16,
+      lineHeight: 22,
+      color: theme.text,
+      backgroundColor: theme.backgroundElement,
+      borderWidth: 1,
+      borderColor: theme.borderStrong,
+    },
 
-  promiseCard: {
-    gap: 8,
-    padding: 20,
-    borderRadius: 22,
-    backgroundColor: Brand.forest,
-  },
+    orLabel: {
+      paddingTop: 4,
+      fontSize: 10,
+      letterSpacing: 1.2,
+    },
 
-  promiseLabel: {
-    color: '#C4A66A',
-    fontSize: 10,
-    letterSpacing: 1.4,
-  },
+    promiseCard: {
+      gap: 8,
+      padding: 18,
+      borderRadius: Radius.large,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.accentSurface,
+    },
 
-  promiseTitle: {
-    color: '#FFFFFF',
-    fontFamily: Fonts.serif,
-    fontSize: 23,
-    lineHeight: 30,
-  },
+    promiseLabel: {
+      color: theme.accent,
+      fontSize: 10,
+      letterSpacing: 1.4,
+    },
 
-  steps: {
-    gap: 10,
-  },
+    promiseTitle: {
+      color: theme.text,
+      fontFamily: Fonts.serif,
+      fontSize: 23,
+      lineHeight: 30,
+    },
 
-  step: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 5,
-  },
+    steps: {
+      gap: 10,
+    },
 
-  stepNumber: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#EEF0EC',
-  },
+    step: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 5,
+    },
 
-  stepNumberActive: {
-    backgroundColor: Brand.forest,
-  },
+    stepNumber: {
+      width: 38,
+      height: 38,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: Radius.medium,
+      backgroundColor: theme.backgroundSelected,
+    },
 
-  stepNumberText: {
-    color: '#778078',
-    fontSize: 10,
-    fontWeight: '700',
-  },
+    stepNumberActive: {
+      backgroundColor: theme.accent,
+    },
 
-  stepNumberTextActive: {
-    color: '#FFFFFF',
-  },
+    stepNumberText: {
+      color: theme.textSecondary,
+      fontSize: 10,
+      fontWeight: '700',
+    },
 
-  stepCopy: {
-    flex: 1,
-    gap: 2,
-  },
+    stepNumberTextActive: {
+      color: theme.accentText,
+    },
 
-  actions: {
-    gap: 10,
-  },
+    stepCopy: {
+      flex: 1,
+      gap: 2,
+    },
 
-  primaryButton: {
-    minHeight: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    borderRadius: 17,
-    backgroundColor: Brand.forest,
-  },
+    actions: {
+      gap: 10,
+    },
 
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
+    primaryButton: {
+      minHeight: 46,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      borderRadius: Radius.medium,
+      backgroundColor: theme.accent,
+    },
 
-  secondaryButton: {
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: '#D8DED7',
-  },
+    primaryButtonText: {
+      color: theme.accentText,
+      fontWeight: '700',
+    },
 
-  secondaryButtonText: {
-    color: Brand.forest,
-    fontWeight: '600',
-  },
+    secondaryButton: {
+      minHeight: 46,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      borderRadius: Radius.medium,
+      borderWidth: 1,
+      borderColor: theme.borderStrong,
+      backgroundColor: theme.backgroundElement,
+    },
 
-  pressed: {
-    opacity: 0.75,
-  },
+    secondaryButtonText: {
+      color: theme.text,
+      fontWeight: '600',
+    },
 
-  footer: {
-    textAlign: 'center',
-    paddingTop: 4,
-  },
-});
+    pressed: {
+      opacity: 0.75,
+    },
+
+    footer: {
+      textAlign: 'center',
+      paddingTop: 4,
+    },
+  });
+}
