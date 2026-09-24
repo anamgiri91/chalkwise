@@ -12,6 +12,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
 import { AppIcon } from '@/components/ui/AppIcon';
+import { BackButton } from '@/components/ui/BackButton';
 import { RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
 import { StudyActions } from '@/components/StudyActions';
 import { Radius } from '@/constants/theme';
@@ -47,28 +48,6 @@ function dateOf(value: string) {
   return Number.isNaN(date.getTime())
     ? 'Date unavailable'
     : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function Back() {
-  const theme = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Back"
-      onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-      hitSlop={8}
-      style={({ pressed, hovered }) => [
-        styles.back,
-        { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-        (pressed || hovered) && { backgroundColor: theme.backgroundHover },
-      ]}
-    >
-      <View style={styles.flip}>
-        <AppIcon name="arrow" size={13} color={theme.textSecondary} />
-      </View>
-      <ThemedText style={[styles.backLabel, { color: theme.textSecondary }]}>Back</ThemedText>
-    </Pressable>
-  );
 }
 
 /** Keeps "which of these did a person write" answerable at a glance. */
@@ -330,7 +309,7 @@ export default function LectureNotebookScreen() {
     return (
       <Screen showBottomNav wide>
         <View style={styles.header}>
-          <Back />
+          <BackButton />
           <Toolbar title="Notebook" />
         </View>
         <View style={styles.loading}>
@@ -342,7 +321,7 @@ export default function LectureNotebookScreen() {
     return (
       <Screen showBottomNav wide>
         <View style={styles.header}>
-          <Back />
+          <BackButton />
           <Toolbar title="Notebook" />
         </View>
         <Notice message={error} action="Try again" onPress={retry} />
@@ -352,7 +331,7 @@ export default function LectureNotebookScreen() {
     return (
       <Screen showBottomNav wide>
         <View style={styles.header}>
-          <Back />
+          <BackButton />
           <Toolbar title="Notebook" />
         </View>
         <Section label="Notebook unavailable">
@@ -375,7 +354,7 @@ export default function LectureNotebookScreen() {
   return (
     <Screen showBottomNav wide>
       <View style={styles.header}>
-        <Back />
+        <BackButton />
         <Toolbar title={lecture.title} />
         <ThemedText style={[styles.metaText, { color: theme.textSecondary }]}>
           {[course?.code ?? 'No course', dateOf(lecture.createdAt), photos].join('   ·   ')}
@@ -606,18 +585,6 @@ export default function LectureNotebookScreen() {
 
 const styles = StyleSheet.create({
   header: { gap: 8 },
-  back: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    height: 26,
-    paddingHorizontal: 9,
-    borderWidth: 1,
-    borderRadius: Radius.medium,
-  },
-  backLabel: { fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
-  flip: { transform: [{ scaleX: -1 }] },
   metaText: { fontSize: 12.5, lineHeight: 18 },
   loading: { paddingVertical: 48, alignItems: 'center' },
   notice: {

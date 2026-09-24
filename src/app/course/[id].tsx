@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
 import { AppIcon } from '@/components/ui/AppIcon';
+import { BackButton } from '@/components/ui/BackButton';
 import { Row, RowGroup, Section, Toolbar, since } from '@/components/ui/DataRow';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -71,6 +72,7 @@ export default function CourseScreen() {
   if (error || !data?.course) {
     return (
       <Screen showBottomNav wide>
+        <BackButton />
         <Toolbar title={error ? 'Could not load course' : 'Course not found'} />
         <RowGroup>
           <Row
@@ -87,6 +89,7 @@ export default function CourseScreen() {
   const course = data.course;
   return (
     <Screen showBottomNav wide>
+      <BackButton />
       <Toolbar title={course.name} actions={capture} />
       <ThemedText style={[styles.meta, { color: theme.textSecondary }]}>
         {[course.code, course.professor].filter(Boolean).join(' · ')}

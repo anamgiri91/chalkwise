@@ -199,6 +199,8 @@ export default function RootLayout() {
           name="course/[id]"
           options={{
             title: 'Course workspace',
+            // The course page renders its own back control inside the workspace shell.
+            headerShown: false,
           }}
         />
 
