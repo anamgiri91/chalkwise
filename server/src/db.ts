@@ -18,6 +18,11 @@ export async function openDatabase(config: Config): Promise<Database> {
     statement_timeout: 10000,
     application_name: 'chalkwise-api',
   });
+  // Idle connections can fail during an RDS restart. pg removes the failed
+  // connection, but an unhandled pool 'error' event would terminate the API.
+  pool.on('error', () => {
+    console.error(JSON.stringify({ level: 'error', event: 'database_idle_connection_failed' }));
+  });
   // RLS is ineffective for superusers, BYPASSRLS roles and table owners.
   try {
     const result = await pool.query(`SELECT r.rolsuper OR r.rolbypassrls OR EXISTS (
@@ -34,6 +39,7 @@ export async function openDatabase(config: Config): Promise<Database> {
   return {
     async asUser(userId, work) {
       const client = await pool.connect();
+      let discard = false;
       try {
         await client.query('BEGIN');
         // Transaction-local context cannot leak to the next pooled request.
@@ -42,10 +48,15 @@ export async function openDatabase(config: Config): Promise<Database> {
         await client.query('COMMIT');
         return result;
       } catch (error) {
-        await client.query('ROLLBACK');
+        try {
+          await client.query('ROLLBACK');
+        } catch {
+          // Never reuse a connection with uncertain transaction/user context.
+          discard = true;
+        }
         throw error;
       } finally {
-        client.release();
+        client.release(discard);
       }
     },
     async ping() {
