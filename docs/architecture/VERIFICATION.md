@@ -1,5 +1,9 @@
 # Full-stack checkpoint verification
 
+For the current deployment-hardening results and feature inventory, see the
+[September 24 readiness report](../DEPLOYMENT_READINESS.md). The results below
+remain the historical September 21 checkpoint and do not certify later changes.
+
 Recorded September 21, 2026. Results apply to the full-stack checkpoint. Separate, concurrent AI/capture changes in the working directory were excluded from the verification snapshot and checkpoint commit.
 
 ## Local checks
