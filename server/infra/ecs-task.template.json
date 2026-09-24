@@ -1,0 +1,57 @@
+{
+  "family": "chalkwise-api",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "256",
+  "memory": "1024",
+  "runtimePlatform": { "cpuArchitecture": "X86_64", "operatingSystemFamily": "LINUX" },
+  "executionRoleArn": "<task-execution-role-arn>",
+  "taskRoleArn": "<private-materials-task-role-arn>",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "<ecr-repository>@sha256:<reviewed-image-digest>",
+      "essential": true,
+      "user": "node",
+      "readonlyRootFilesystem": true,
+      "stopTimeout": 120,
+      "portMappings": [{ "containerPort": 3001, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "HOST", "value": "0.0.0.0" },
+        { "name": "PORT", "value": "3001" },
+        { "name": "DATABASE_CA_FILE", "value": "/app/rds-ca.pem" },
+        { "name": "AWS_REGION", "value": "<aws-region>" },
+        { "name": "COGNITO_USER_POOL_ID", "value": "<user-pool-id>" },
+        { "name": "COGNITO_CLIENT_ID", "value": "<public-client-id>" },
+        { "name": "S3_BUCKET", "value": "<private-materials-bucket>" },
+        { "name": "WEB_ORIGINS", "value": "https://<website-hostname>" },
+        { "name": "GEMINI_MODEL", "value": "gemini-3.1-flash-lite" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "<database-url-secret-arn>" },
+        { "name": "GEMINI_API_KEY", "valueFrom": "<gemini-key-secret-arn>" }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3001/health/live',{signal:AbortSignal.timeout(4000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "<existing-log-group>",
+          "awslogs-region": "<aws-region>",
+          "awslogs-stream-prefix": "api",
+          "mode": "non-blocking",
+          "max-buffer-size": "1m"
+        }
+      }
+    }
+  ]
+}
