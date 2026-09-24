@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { Row, RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
+import { AppTextInput } from '@/components/ui/AppTextInput';
+import { ChoiceChips } from '@/components/ui/ChoiceChips';
 import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
 import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
@@ -79,10 +81,6 @@ export default function ProfileScreen() {
   }
   const first = loading && !profile;
   const incomplete = !name.trim() || !major.trim();
-  const inputStyle = [
-    styles.input,
-    { color: theme.text, borderColor: theme.border, backgroundColor: theme.background },
-  ];
   return (
     <Screen showBottomNav avoidKeyboard>
       <Toolbar
@@ -148,76 +146,29 @@ export default function ProfileScreen() {
                   { borderColor: theme.border, backgroundColor: theme.backgroundElement },
                 ]}
               >
-                <View style={styles.field}>
-                  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-                    Name
-                  </ThemedText>
-                  <TextInput
-                    style={inputStyle}
-                    value={name}
-                    onChangeText={setName}
-                    editable={!busy}
-                    autoComplete="name"
-                    accessibilityLabel="Your name"
-                    maxLength={100}
-                  />
-                </View>
-                <View style={styles.field}>
-                  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-                    Year
-                  </ThemedText>
-                  <View
-                    accessibilityRole="radiogroup"
-                    accessibilityLabel="Year"
-                    style={styles.chips}
-                  >
-                    {years.map((value) => {
-                      const active = year === value;
-                      return (
-                        <Pressable
-                          key={value}
-                          accessibilityRole="radio"
-                          accessibilityLabel={value}
-                          accessibilityState={{ checked: active, disabled: busy }}
-                          disabled={busy}
-                          hitSlop={6}
-                          onPress={() => setYear(value)}
-                          style={({ pressed, hovered }) => [
-                            styles.chip,
-                            {
-                              borderColor: active ? theme.borderStrong : theme.border,
-                              backgroundColor: active ? theme.backgroundSelected : theme.background,
-                            },
-                            !active &&
-                              (pressed || hovered) && { backgroundColor: theme.backgroundHover },
-                          ]}
-                        >
-                          <ThemedText
-                            style={[
-                              styles.chipLabel,
-                              { color: active ? theme.text : theme.textSecondary },
-                            ]}
-                          >
-                            {value}
-                          </ThemedText>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-                <View style={styles.field}>
-                  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-                    Major or program
-                  </ThemedText>
-                  <TextInput
-                    style={inputStyle}
-                    value={major}
-                    onChangeText={setMajor}
-                    editable={!busy}
-                    accessibilityLabel="Major or program"
-                    maxLength={160}
-                  />
-                </View>
+                <AppTextInput
+                  label="Name"
+                  accessibilityLabel="Your name"
+                  value={name}
+                  onChangeText={setName}
+                  editable={!busy}
+                  autoComplete="name"
+                  maxLength={100}
+                />
+                <ChoiceChips
+                  label="Year"
+                  options={years}
+                  value={year}
+                  disabled={busy}
+                  onChange={setYear}
+                />
+                <AppTextInput
+                  label="Major or program"
+                  value={major}
+                  onChangeText={setMajor}
+                  editable={!busy}
+                  maxLength={160}
+                />
               </View>
             ) : (
               <RowGroup>
@@ -316,25 +267,6 @@ const styles = StyleSheet.create({
   },
   noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
   panel: { gap: 14, padding: 14, borderWidth: 1, borderRadius: Radius.large },
-  field: { gap: 6 },
-  label: { fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
-  input: {
-    height: 34,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderRadius: Radius.medium,
-    fontSize: 13.5,
-    outlineStyle: 'none',
-  } as object,
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: {
-    justifyContent: 'center',
-    height: 30,
-    paddingHorizontal: 11,
-    borderWidth: 1,
-    borderRadius: Radius.medium,
-  },
-  chipLabel: { fontSize: 13, lineHeight: 18, fontWeight: '500' },
   note: { fontSize: 12.5, lineHeight: 18 },
   signOut: { justifyContent: 'center', minHeight: 44, paddingHorizontal: 14 },
   signOutLabel: { fontSize: 13.5, lineHeight: 19, fontWeight: '600' },

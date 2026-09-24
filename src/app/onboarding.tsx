@@ -1,18 +1,17 @@
 import { useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
 
 import { ChalkwiseLogo } from '@/components/ChalkwiseLogo';
 import { ThemedText } from '@/components/themed-text';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppTextInput, FormError } from '@/components/ui/AppTextInput';
+import { ChoiceChips } from '@/components/ui/ChoiceChips';
 import { Screen } from '@/components/ui/Screen';
-import { Fonts, Radius } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Fonts } from '@/constants/theme';
 import { saveMyProfile } from '@/services/auth';
 import { years, type Year } from '@/types';
 
 export default function OnboardingScreen() {
-  const theme = useTheme();
   const [name, setName] = useState('');
   const [year, setYear] = useState<Year | null>(null);
   const [major, setMajor] = useState('');
@@ -67,46 +66,16 @@ export default function OnboardingScreen() {
           onSubmitEditing={() => majorRef.current?.focus()}
         />
 
-        <View style={styles.field}>
-          <ThemedText nativeID="year-label" style={[styles.label, { color: theme.textSecondary }]}>
-            Year
-          </ThemedText>
-          <View style={styles.chips} accessibilityRole="radiogroup" aria-labelledby="year-label">
-            {years.map((option) => {
-              const active = year === option;
-              return (
-                <Pressable
-                  key={option}
-                  accessibilityRole="radio"
-                  accessibilityLabel={option}
-                  accessibilityState={{ checked: active, disabled: busy }}
-                  disabled={busy}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    setYear(option);
-                  }}
-                  style={({ pressed, hovered }) => [
-                    styles.chip,
-                    {
-                      backgroundColor: active
-                        ? theme.accent
-                        : hovered || pressed
-                          ? theme.backgroundHover
-                          : theme.backgroundElement,
-                      borderColor: active ? theme.accent : theme.borderStrong,
-                    },
-                  ]}
-                >
-                  <ThemedText
-                    style={[styles.chipText, { color: active ? theme.accentText : theme.text }]}
-                  >
-                    {option}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        <ChoiceChips
+          label="Year"
+          options={years}
+          value={year}
+          disabled={busy}
+          onChange={(option) => {
+            Keyboard.dismiss();
+            setYear(option);
+          }}
+        />
 
         <AppTextInput
           ref={majorRef}
@@ -134,15 +103,4 @@ const styles = StyleSheet.create({
   intro: { gap: 12 },
   title: { fontFamily: Fonts.serif, fontWeight: '400', letterSpacing: -1.2 },
   form: { gap: 16 },
-  field: { gap: 6 },
-  label: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderRadius: Radius.medium,
-    borderWidth: 1,
-  },
-  chipText: { fontSize: 14, fontWeight: '600' },
 });
