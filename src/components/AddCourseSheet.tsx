@@ -42,11 +42,7 @@ type Props = {
   onCreated: (course: Course) => void;
 };
 
-export function AddCourseSheet({
-  visible,
-  onClose,
-  onCreated,
-}: Props) {
+export function AddCourseSheet({ visible, onClose, onCreated }: Props) {
   const theme = useTheme();
   const dark = theme.background !== Brand.paper;
   // Wide screens get a centered dialog; a full-width bottom sheet suits phones only.
@@ -69,16 +65,13 @@ export function AddCourseSheet({
     if (!query) return [];
     const exact = suggestions.some(
       (option) =>
-        normalize(option.code) === normalize(code) &&
-        normalize(option.name) === normalize(name)
+        normalize(option.code) === normalize(code) && normalize(option.name) === normalize(name),
     );
     if (exact) return [];
     // Match the field being typed against its own attribute: matching a code
     // against names surfaces nonsense (“CS” hits “statisti-cs”).
     return suggestions
-      .filter((option) =>
-        normalize(focused === 'code' ? option.code : option.name).includes(query)
-      )
+      .filter((option) => normalize(focused === 'code' ? option.code : option.name).includes(query))
       .slice(0, 4);
   }, [focused, code, name]);
 
@@ -117,7 +110,7 @@ export function AddCourseSheet({
       setError(
         caught instanceof Error
           ? caught.message
-          : 'That course could not be saved. Please try again.'
+          : 'That course could not be saved. Please try again.',
       );
       setSaving(false);
     }
@@ -168,15 +161,9 @@ export function AddCourseSheet({
               },
             ]}
           >
-            <ThemedText style={styles.suggestionCode}>
-              {option.code}
-            </ThemedText>
+            <ThemedText style={styles.suggestionCode}>{option.code}</ThemedText>
 
-            <ThemedText
-              type="small"
-              themeColor="textSecondary"
-              numberOfLines={1}
-            >
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
               {option.name}
             </ThemedText>
           </Pressable>
@@ -193,10 +180,7 @@ export function AddCourseSheet({
       presentationStyle="overFullScreen"
       onRequestClose={close}
     >
-      <Pressable
-        style={[styles.backdrop, dialog && styles.dialogBackdrop]}
-        onPress={close}
-      >
+      <Pressable style={[styles.backdrop, dialog && styles.dialogBackdrop]} onPress={close}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={[styles.frame, dialog && styles.dialogFrame]}
@@ -210,12 +194,7 @@ export function AddCourseSheet({
             onPress={(event) => event.stopPropagation()}
           >
             {dialog ? null : (
-              <View
-                style={[
-                  styles.handle,
-                  { backgroundColor: theme.backgroundSelected },
-                ]}
-              />
+              <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
             )}
 
             <ScrollView
@@ -223,26 +202,17 @@ export function AddCourseSheet({
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.content}
             >
-              <ThemedText
-                accessibilityRole="header"
-                style={[styles.title, { color: theme.text }]}
-              >
+              <ThemedText accessibilityRole="header" style={[styles.title, { color: theme.text }]}>
                 Add a course
               </ThemedText>
 
-              <ThemedText
-                themeColor="textSecondary"
-                style={styles.description}
-              >
-                Everything you capture for this class will live here.
-                Start typing and Chalkwise will suggest matching courses.
+              <ThemedText themeColor="textSecondary" style={styles.description}>
+                Everything you capture for this class will live here. Start typing and Chalkwise
+                will suggest matching courses.
               </ThemedText>
 
               <View style={styles.field}>
-                <ThemedText
-                  themeColor="textSecondary"
-                  style={styles.label}
-                >
+                <ThemedText themeColor="textSecondary" style={styles.label}>
                   Course code
                 </ThemedText>
 
@@ -263,10 +233,7 @@ export function AddCourseSheet({
               </View>
 
               <View style={styles.field}>
-                <ThemedText
-                  themeColor="textSecondary"
-                  style={styles.label}
-                >
+                <ThemedText themeColor="textSecondary" style={styles.label}>
                   Course name
                 </ThemedText>
 
@@ -285,10 +252,7 @@ export function AddCourseSheet({
               </View>
 
               <View style={styles.field}>
-                <ThemedText
-                  themeColor="textSecondary"
-                  style={styles.label}
-                >
+                <ThemedText themeColor="textSecondary" style={styles.label}>
                   Professor (optional)
                 </ThemedText>
 
@@ -307,10 +271,7 @@ export function AddCourseSheet({
               {error ? (
                 <ThemedText
                   accessibilityLiveRegion="polite"
-                  style={[
-                    styles.error,
-                    { color: dark ? '#E7A6A6' : '#8C3B3B' },
-                  ]}
+                  style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}
                 >
                   {error}
                 </ThemedText>

@@ -57,10 +57,7 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
 
   const refresh = useCallback(async () => {
     try {
-      const [incoming, current] = await Promise.all([
-        getIncomingRequests(),
-        getFriendshipStates(),
-      ]);
+      const [incoming, current] = await Promise.all([getIncomingRequests(), getFriendshipStates()]);
       setRequests(incoming);
       setStates(current);
     } catch (caught) {
@@ -86,7 +83,9 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
       }
     }
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [visible, refresh]);
 
   // Debounced so typing does not fire a query per keystroke.
@@ -101,11 +100,20 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
     setSearching(true);
     const timer = setTimeout(() => {
       searchProfiles(term)
-        .then((found) => { if (active) setResults(found); })
-        .catch((caught) => { if (active) setError(message(caught)); })
-        .finally(() => { if (active) setSearching(false); });
+        .then((found) => {
+          if (active) setResults(found);
+        })
+        .catch((caught) => {
+          if (active) setError(message(caught));
+        })
+        .finally(() => {
+          if (active) setSearching(false);
+        });
     }, 300);
-    return () => { active = false; clearTimeout(timer); };
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [query, visible, signedIn]);
 
   function close() {
@@ -176,12 +184,7 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.lift}
         >
-          <View
-            style={[
-              styles.sheet,
-              { maxHeight: sheetMax, paddingBottom: insets.bottom + 16 },
-            ]}
-          >
+          <View style={[styles.sheet, { maxHeight: sheetMax, paddingBottom: insets.bottom + 16 }]}>
             <View style={styles.handle} />
 
             <View style={styles.header}>
@@ -197,7 +200,9 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
                 onPress={close}
                 style={({ pressed }) => [styles.close, pressed && styles.dim]}
               >
-                <ThemedText allowFontScaling={false} style={styles.closeText}>×</ThemedText>
+                <ThemedText allowFontScaling={false} style={styles.closeText}>
+                  ×
+                </ThemedText>
               </Pressable>
             </View>
 
@@ -208,14 +213,17 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
             ) : signedIn === false ? (
               <View style={styles.signedOut}>
                 <ThemedText style={styles.body}>
-                  Sign in to add classmates. Catch Up shares notes between real
-                  accounts, so friends need you signed in.
+                  Sign in to add classmates. Catch Up shares notes between real accounts, so friends
+                  need you signed in.
                 </ThemedText>
 
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Sign in"
-                  onPress={() => { onClose(); router.push('/login'); }}
+                  onPress={() => {
+                    onClose();
+                    router.push('/login');
+                  }}
                   style={({ pressed }) => [styles.primary, pressed && styles.dim]}
                 >
                   <ThemedText style={styles.primaryText}>Sign in</ThemedText>
@@ -269,9 +277,11 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
                               (pressed || working !== null) && styles.dim,
                             ]}
                           >
-                            {working === request.id
-                              ? <ActivityIndicator color={Brand.ink} />
-                              : <ThemedText style={styles.actionText}>Accept</ThemedText>}
+                            {working === request.id ? (
+                              <ActivityIndicator color={Brand.ink} />
+                            ) : (
+                              <ThemedText style={styles.actionText}>Accept</ThemedText>
+                            )}
                           </Pressable>
                         </View>
                       ))}
@@ -328,9 +338,11 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
                               (pressed || working !== null) && styles.dim,
                             ]}
                           >
-                            {working === profile.id
-                              ? <ActivityIndicator color={Brand.ink} />
-                              : <ThemedText style={styles.actionText}>Add</ThemedText>}
+                            {working === profile.id ? (
+                              <ActivityIndicator color={Brand.ink} />
+                            ) : (
+                              <ThemedText style={styles.actionText}>Add</ThemedText>
+                            )}
                           </Pressable>
                         )}
                       </View>
@@ -367,8 +379,11 @@ const styles = StyleSheet.create({
   },
 
   handle: {
-    width: 38, height: 4, borderRadius: 999,
-    backgroundColor: '#4E7060', alignSelf: 'center',
+    width: 38,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: '#4E7060',
+    alignSelf: 'center',
   },
 
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
@@ -377,15 +392,27 @@ const styles = StyleSheet.create({
   title: { color: '#FFFFFF', fontSize: 24, lineHeight: 30, fontWeight: '600' },
 
   close: {
-    width: 34, height: 34, flexShrink: 0, borderRadius: 17,
-    backgroundColor: '#1B3B2D', alignItems: 'center', justifyContent: 'center',
+    width: 34,
+    height: 34,
+    flexShrink: 0,
+    borderRadius: 17,
+    backgroundColor: '#1B3B2D',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeText: { color: '#DCE7DA', fontSize: 20, lineHeight: 24 },
 
   input: {
-    minHeight: 50, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
-    color: '#FFFFFF', backgroundColor: '#1B3B2D',
-    borderWidth: 1, borderColor: '#3D6350', fontSize: 16, lineHeight: 22,
+    minHeight: 50,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#FFFFFF',
+    backgroundColor: '#1B3B2D',
+    borderWidth: 1,
+    borderColor: '#3D6350',
+    fontSize: 16,
+    lineHeight: 22,
   },
 
   // flexShrink lets the list give way to the keyboard instead of pushing the
@@ -397,12 +424,21 @@ const styles = StyleSheet.create({
   label: { color: Brand.lime, fontSize: 10, lineHeight: 16, letterSpacing: 1 },
 
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 16, padding: 14, backgroundColor: '#1B3B2D',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: '#1B3B2D',
   },
   avatar: {
-    width: 40, height: 40, flexShrink: 0, borderRadius: 14,
-    backgroundColor: '#2C5B43', alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    flexShrink: 0,
+    borderRadius: 14,
+    backgroundColor: '#2C5B43',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarText: { color: Brand.lime, fontSize: 13, fontWeight: '700' },
   rowCopy: { flex: 1, minWidth: 0, gap: 2 },
@@ -410,24 +446,36 @@ const styles = StyleSheet.create({
   rowMeta: { color: '#B9CEBF', fontSize: 13, lineHeight: 20 },
 
   action: {
-    minHeight: 40, minWidth: 84, flexShrink: 0,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 14, borderRadius: 12, backgroundColor: Brand.lime,
+    minHeight: 40,
+    minWidth: 84,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: Brand.lime,
   },
   actionText: { color: Brand.ink, fontWeight: '700', fontSize: 14 },
 
   badge: {
-    minHeight: 40, flexShrink: 0, justifyContent: 'center',
-    paddingHorizontal: 14, borderRadius: 12,
-    borderWidth: 1, borderColor: '#3D6350',
+    minHeight: 40,
+    flexShrink: 0,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3D6350',
   },
   badgeText: { color: '#B9CEBF', fontSize: 13, fontWeight: '600' },
 
   signedOut: { gap: 14, paddingBottom: 4 },
   body: { color: '#DCE7DA', fontSize: 15, lineHeight: 23 },
   primary: {
-    minHeight: 52, borderRadius: 16, backgroundColor: Brand.lime,
-    alignItems: 'center', justifyContent: 'center',
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: Brand.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryText: { color: Brand.ink, fontWeight: '700' },
 

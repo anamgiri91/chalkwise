@@ -1,13 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Screen } from '@/components/ui/Screen';
@@ -63,7 +56,9 @@ export default function ProcessingScreen() {
   }>();
 
   const sessionResult = useMemo(() => {
-    const raw = Array.isArray(params.captureSession) ? params.captureSession[0] : params.captureSession;
+    const raw = Array.isArray(params.captureSession)
+      ? params.captureSession[0]
+      : params.captureSession;
     if (!raw) return { session: null, error: '' };
     try {
       return { session: parseCaptureSession(raw), error: '' };
@@ -89,9 +84,7 @@ export default function ProcessingScreen() {
           const parsed = JSON.parse(value);
 
           if (Array.isArray(parsed)) {
-            return parsed.filter(
-              (item): item is string => typeof item === 'string'
-            );
+            return parsed.filter((item): item is string => typeof item === 'string');
           }
         } catch {
           // A normal Expo file URI is expected here.
@@ -152,7 +145,9 @@ export default function ProcessingScreen() {
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -188,7 +183,8 @@ export default function ProcessingScreen() {
         if (!course.current) {
           const courses = await getMyEnrolledCourses();
           // A course chosen before capture wins over the analysis label.
-          if (courseId) course.current = courses.find((candidate) => candidate.id === courseId) ?? null;
+          if (courseId)
+            course.current = courses.find((candidate) => candidate.id === courseId) ?? null;
 
           if (!course.current) {
             const matched = matchCourse(analysis.current.suggestedCourse, courses);
@@ -212,7 +208,8 @@ export default function ProcessingScreen() {
 
         setStage('saving');
         if (!savedLectureId.current) {
-          const { title, summary, keyConcepts, importantPoints, assignments, examMentions } = analysis.current;
+          const { title, summary, keyConcepts, importantPoints, assignments, examMentions } =
+            analysis.current;
           const lecture = await createLecture({
             courseId: course.current.id,
             title,
@@ -297,7 +294,10 @@ export default function ProcessingScreen() {
           body: `Putting photo ${Math.min(uploaded + 1, count)} of ${count} somewhere safe.`,
         }
       : stageCopy[stage];
-  const understanding = !error && !picking && (stage === 'uploading' || stage === 'analyzing' || stage === 'organizing');
+  const understanding =
+    !error &&
+    !picking &&
+    (stage === 'uploading' || stage === 'analyzing' || stage === 'organizing');
   const building = !error && !picking && (stage === 'saving' || stage === 'done');
 
   return (
@@ -313,26 +313,23 @@ export default function ProcessingScreen() {
               ? 'This capture session could not be opened.'
               : !hasMaterial
                 ? 'No lecture material found.'
-              : error
-                ? 'This didn’t come together.'
-                : picking
-                  ? 'Where does this lecture belong?'
-                  : 'Your lecture is being understood.'}
+                : error
+                  ? 'This didn’t come together.'
+                  : picking
+                    ? 'Where does this lecture belong?'
+                    : 'Your lecture is being understood.'}
           </ThemedText>
 
-          <ThemedText
-            themeColor="textSecondary"
-            style={styles.subtitle}
-          >
+          <ThemedText themeColor="textSecondary" style={styles.subtitle}>
             {invalidCaptureSession
               ? sessionResult.error
               : !hasMaterial
                 ? 'Choose a photo, slide, recording, or file and try again.'
-              : error
-                ? 'Your material is safe. Nothing was lost, and you can pick up where this stopped.'
-                : picking
-                  ? 'Chalkwise organized your material. Tell it which course this belongs to and the notebook will be saved.'
-                  : 'Chalkwise is turning your actual class material into a structured notebook — never a generic sample.'}
+                : error
+                  ? 'Your material is safe. Nothing was lost, and you can pick up where this stopped.'
+                  : picking
+                    ? 'Chalkwise organized your material. Tell it which course this belongs to and the notebook will be saved.'
+                    : 'Chalkwise is turning your actual class material into a structured notebook — never a generic sample.'}
           </ThemedText>
         </View>
 
@@ -340,48 +337,30 @@ export default function ProcessingScreen() {
           <View style={styles.previewSection}>
             <View style={styles.previewHeader}>
               <ThemedText type="smallBold">
-                {count === 1
-                  ? 'LECTURE PAGE'
-                  : `${count} LECTURE PAGES`}
+                {count === 1 ? 'LECTURE PAGE' : `${count} LECTURE PAGES`}
               </ThemedText>
 
               <View style={styles.readyBadge}>
                 <View style={styles.readyDot} />
-                <ThemedText style={styles.readyText}>
-                  Ready
-                </ThemedText>
+                <ThemedText style={styles.readyText}>Ready</ThemedText>
               </View>
             </View>
 
             <View style={styles.previewRow}>
               {assets.slice(0, 3).map((uri, index) => (
-                <View
-                  key={`${uri}-${index}`}
-                  style={styles.previewCard}
-                >
-                  <Image
-                    source={{ uri }}
-                    style={styles.previewImage}
-                    resizeMode="cover"
-                  />
+                <View key={`${uri}-${index}`} style={styles.previewCard}>
+                  <Image source={{ uri }} style={styles.previewImage} resizeMode="cover" />
 
                   <View style={styles.pageBadge}>
-                    <ThemedText style={styles.pageBadgeText}>
-                      {index + 1}
-                    </ThemedText>
+                    <ThemedText style={styles.pageBadgeText}>{index + 1}</ThemedText>
                   </View>
                 </View>
               ))}
 
               {count > 3 ? (
                 <View style={[styles.previewCard, styles.moreCard]}>
-                  <ThemedText style={styles.moreNumber}>
-                    +{count - 3}
-                  </ThemedText>
-                  <ThemedText
-                    type="small"
-                    themeColor="textSecondary"
-                  >
+                  <ThemedText style={styles.moreNumber}>+{count - 3}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
                     more
                   </ThemedText>
                 </View>
@@ -398,17 +377,12 @@ export default function ProcessingScreen() {
                   !
                 </ThemedText>
               ) : (
-                <ActivityIndicator
-                  size="small"
-                  color={Brand.forest}
-                />
+                <ActivityIndicator size="small" color={Brand.forest} />
               )}
             </View>
 
             <View style={styles.analysisCopy}>
-              <ThemedText type="subtitle">
-                {error ? 'Analysis stopped' : status.title}
-              </ThemedText>
+              <ThemedText type="subtitle">{error ? 'Analysis stopped' : status.title}</ThemedText>
 
               <ThemedText
                 themeColor="textSecondary"
@@ -425,14 +399,9 @@ export default function ProcessingScreen() {
           <View style={styles.pickerSection}>
             <View style={styles.analysisCard}>
               <View style={styles.analysisCopy}>
-                <ThemedText type="subtitle">
-                  {analysis.current?.title ?? 'New course'}
-                </ThemedText>
+                <ThemedText type="subtitle">{analysis.current?.title ?? 'New course'}</ThemedText>
 
-                <ThemedText
-                  themeColor="textSecondary"
-                  style={styles.body}
-                >
+                <ThemedText themeColor="textSecondary" style={styles.body}>
                   {analysis.current?.suggestedCourse
                     ? `We read this as “${analysis.current.suggestedCourse}”, which doesn’t match a course yet.`
                     : 'We couldn’t tell which course this belongs to.'}
@@ -485,12 +454,15 @@ export default function ProcessingScreen() {
 
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: creating || !form.code.trim() || !form.name.trim() }}
+                  accessibilityState={{
+                    disabled: creating || !form.code.trim() || !form.name.trim(),
+                  }}
                   disabled={creating || !form.code.trim() || !form.name.trim()}
                   onPress={createAndContinue}
                   style={({ pressed }) => [
                     styles.primaryButton,
-                    (pressed || creating || !form.code.trim() || !form.name.trim()) && styles.pressed,
+                    (pressed || creating || !form.code.trim() || !form.name.trim()) &&
+                      styles.pressed,
                   ]}
                 >
                   <ThemedText style={styles.primaryButtonText}>
@@ -502,11 +474,7 @@ export default function ProcessingScreen() {
 
             {choices.length ? (
               <View style={styles.actions}>
-                <ThemedText
-                  type="smallBold"
-                  themeColor="textSecondary"
-                  style={styles.orLabel}
-                >
+                <ThemedText type="smallBold" themeColor="textSecondary" style={styles.orLabel}>
                   OR FILE IT UNDER AN EXISTING COURSE
                 </ThemedText>
 
@@ -517,10 +485,7 @@ export default function ProcessingScreen() {
                     accessibilityState={{ disabled: creating }}
                     disabled={creating}
                     onPress={() => chooseCourse(option)}
-                    style={({ pressed }) => [
-                      styles.secondaryButton,
-                      pressed && styles.pressed,
-                    ]}
+                    style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
                   >
                     <ThemedText style={styles.secondaryButtonText}>
                       {option.code} · {option.name}
@@ -532,59 +497,54 @@ export default function ProcessingScreen() {
           </View>
         ) : null}
 
-        {!invalidCaptureSession ? <View style={styles.promiseCard}>
-          <ThemedText type="smallBold" style={styles.promiseLabel}>
-            CHALKWISE PROMISE
-          </ThemedText>
+        {!invalidCaptureSession ? (
+          <View style={styles.promiseCard}>
+            <ThemedText type="smallBold" style={styles.promiseLabel}>
+              CHALKWISE PROMISE
+            </ThemedText>
 
-          <ThemedText style={styles.promiseTitle}>
-            Your notes should come from your lecture.
-          </ThemedText>
+            <ThemedText style={styles.promiseTitle}>
+              Your notes should come from your lecture.
+            </ThemedText>
 
-          <ThemedText
-            themeColor="textSecondary"
-            style={styles.body}
-          >
-            Chalkwise will not substitute Binary Search Trees,
-            sample notes, or unrelated academic content when analysis
-            is unavailable.
-          </ThemedText>
-        </View> : null}
+            <ThemedText themeColor="textSecondary" style={styles.body}>
+              Chalkwise will not substitute Binary Search Trees, sample notes, or unrelated academic
+              content when analysis is unavailable.
+            </ThemedText>
+          </View>
+        ) : null}
 
-        {!invalidCaptureSession ? <View style={styles.steps}>
-          <Step
-            number="01"
-            title="Capture"
-            description="Your original class material"
-            active={hasMaterial}
-          />
-          <Step
-            number="02"
-            title="Understand"
-            description="Vision + lecture analysis"
-            active={understanding || picking}
-          />
-          <Step
-            number="03"
-            title="Notebook"
-            description="Notes, slides, quiz and Q&A"
-            active={building}
-          />
-        </View> : null}
+        {!invalidCaptureSession ? (
+          <View style={styles.steps}>
+            <Step
+              number="01"
+              title="Capture"
+              description="Your original class material"
+              active={hasMaterial}
+            />
+            <Step
+              number="02"
+              title="Understand"
+              description="Vision + lecture analysis"
+              active={understanding || picking}
+            />
+            <Step
+              number="03"
+              title="Notebook"
+              description="Notes, slides, quiz and Q&A"
+              active={building}
+            />
+          </View>
+        ) : null}
 
         <View style={styles.actions}>
           {error ? (
             <Pressable
               accessibilityRole="button"
               onPress={tryAgain}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.pressed,
-              ]}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
             >
-              <ThemedText style={styles.primaryButtonText}>
-                Try again
-              </ThemedText>
+              <ThemedText style={styles.primaryButtonText}>Try again</ThemedText>
             </Pressable>
           ) : null}
 
@@ -597,31 +557,20 @@ export default function ProcessingScreen() {
             ]}
           >
             <ThemedText style={error ? styles.secondaryButtonText : styles.primaryButtonText}>
-              {hasMaterial
-                ? 'Choose different material'
-                : 'Return to capture'}
+              {hasMaterial ? 'Choose different material' : 'Return to capture'}
             </ThemedText>
           </Pressable>
 
           <Pressable
             accessibilityRole="button"
             onPress={() => router.back()}
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed && styles.pressed,
-            ]}
+            style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
           >
-            <ThemedText style={styles.secondaryButtonText}>
-              Go back
-            </ThemedText>
+            <ThemedText style={styles.secondaryButtonText}>Go back</ThemedText>
           </Pressable>
         </View>
 
-        <ThemedText
-          type="small"
-          themeColor="textSecondary"
-          style={styles.footer}
-        >
+        <ThemedText type="small" themeColor="textSecondary" style={styles.footer}>
           Actual material in. Actual understanding out. ✦
         </ThemedText>
       </View>
@@ -642,28 +591,15 @@ function Step({
 }) {
   return (
     <View style={styles.step}>
-      <View
-        style={[
-          styles.stepNumber,
-          active && styles.stepNumberActive,
-        ]}
-      >
-        <ThemedText
-          style={[
-            styles.stepNumberText,
-            active && styles.stepNumberTextActive,
-          ]}
-        >
+      <View style={[styles.stepNumber, active && styles.stepNumberActive]}>
+        <ThemedText style={[styles.stepNumberText, active && styles.stepNumberTextActive]}>
           {number}
         </ThemedText>
       </View>
 
       <View style={styles.stepCopy}>
         <ThemedText type="smallBold">{title}</ThemedText>
-        <ThemedText
-          type="small"
-          themeColor="textSecondary"
-        >
+        <ThemedText type="small" themeColor="textSecondary">
           {description}
         </ThemedText>
       </View>
