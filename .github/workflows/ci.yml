@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   application:
     runs-on: ubuntu-latest
@@ -26,11 +30,28 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix server
       - run: npm run check
-      - run: npm run build:web
+      - name: Audit dependencies (moderate findings still require release review)
+        run: |
+          npm audit --audit-level=high
+          npm audit --omit=dev --prefix server --audit-level=high
+      - name: Build explicit demo artifact
+        run: node scripts/build-release.mjs --demo
+      - name: Build API artifact with non-live test identifiers
+        run: node scripts/build-release.mjs
         env:
-          EXPO_PUBLIC_DATA_MODE: mock
+          EXPO_PUBLIC_DATA_MODE: api
+          EXPO_PUBLIC_API_URL: https://api.chalkwise.invalid
+          EXPO_PUBLIC_AWS_REGION: us-east-1
+          EXPO_PUBLIC_COGNITO_CLIENT_ID: citestpublicclient
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-builds-test-config-not-for-deployment
+          path: |
+            dist/mock
+            dist/api
+          if-no-files-found: error
+          retention-days: 7
       - run: git diff --check
-      - run: docker build -f server/Dockerfile -t chalkwise-api:test .
 
   database-isolation:
     # The schema is applied only to this disposable service, never to RDS or Supabase.
@@ -72,3 +93,27 @@ jobs:
         run: npm run test:db --prefix server
         env:
           TEST_DATABASE_URL: postgres://chalkwise_runtime:local-test-only@localhost:5432/chalkwise_test
+      - name: Build API container
+        run: docker build -f server/Dockerfile -t chalkwise-api:test .
+      - name: Verify container startup against the disposable database
+        env:
+          TEST_DATABASE_URL: postgres://chalkwise_runtime:local-test-only@localhost:5432/chalkwise_test
+        run: |
+          docker run --detach --name chalkwise-api-smoke --network host \
+            --env NODE_ENV=test --env DATABASE_CA_FILE= \
+            --env DATABASE_URL="$TEST_DATABASE_URL" \
+            --env AWS_REGION=us-east-1 --env COGNITO_USER_POOL_ID=us-east-1_CiTest \
+            --env COGNITO_CLIENT_ID=citestpublicclient --env S3_BUCKET=ci-private-materials \
+            chalkwise-api:test
+          trap 'docker logs chalkwise-api-smoke; docker rm --force chalkwise-api-smoke' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:3001/health/ready; then
+              status=$(curl --silent --max-time 2 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3001/v1/me)
+              test "$status" = 401
+              docker stop --time 10 chalkwise-api-smoke
+              test "$(docker inspect --format '{{.State.ExitCode}}' chalkwise-api-smoke)" = 0
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
