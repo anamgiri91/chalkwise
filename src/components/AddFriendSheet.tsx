@@ -8,7 +8,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -17,7 +16,12 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Brand } from '@/constants/theme';
+import { AppButton } from '@/components/ui/AppButton';
+import { AppIcon } from '@/components/ui/AppIcon';
+import { AppTextInput, FormError } from '@/components/ui/AppTextInput';
+import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
+import { Radius, Scrim } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getInitials } from '@/features/profile/initials';
 
 import { getCurrentUserId } from '@/services/auth';
@@ -44,7 +48,10 @@ type Props = {
 
 export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const theme = useTheme();
+  // Wide screens get a centered dialog; a bottom sheet suits phones only.
+  const dialog = width >= 720;
 
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [query, setQuery] = useState('');
@@ -164,15 +171,27 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
   // content-sized, so a percentage maxHeight resolves against nothing.
   const sheetMax = Math.round(height * 0.75);
 
+  const rowStyle = [
+    styles.row,
+    { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+  ];
+  const avatar = (name: string) => (
+    <View style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}>
+      <ThemedText allowFontScaling={false} style={styles.avatarText}>
+        {getInitials(name) || '··'}
+      </ThemedText>
+    </View>
+  );
+
   return (
     <Modal
       transparent
       visible={visible}
-      animationType="slide"
+      animationType={dialog ? 'fade' : 'slide'}
       statusBarTranslucent
       onRequestClose={close}
     >
-      <View style={styles.root}>
+      <View style={[styles.root, dialog && styles.dialogRoot]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close"
@@ -182,64 +201,68 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.lift}
+          style={[styles.lift, dialog && styles.dialogLift]}
         >
-          <View style={[styles.sheet, { maxHeight: sheetMax, paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.handle} />
+          <View
+            style={[
+              styles.sheet,
+              { maxHeight: sheetMax, backgroundColor: theme.background },
+              dialog
+                ? [styles.dialog, { borderColor: theme.border }]
+                : { paddingBottom: insets.bottom + 16 },
+            ]}
+          >
+            {dialog ? null : (
+              <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
+            )}
 
             <View style={styles.header}>
-              <View style={styles.headerCopy}>
-                <ThemedText style={styles.eyebrow}>CATCHUPMATE</ThemedText>
-                <ThemedText style={styles.title}>Add a classmate</ThemedText>
-              </View>
+              <ThemedText accessibilityRole="header" style={styles.title}>
+                Add a classmate
+              </ThemedText>
 
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Close"
                 hitSlop={10}
                 onPress={close}
-                style={({ pressed }) => [styles.close, pressed && styles.dim]}
+                style={({ pressed, hovered }) => [
+                  styles.close,
+                  (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+                ]}
               >
-                <ThemedText allowFontScaling={false} style={styles.closeText}>
-                  ×
-                </ThemedText>
+                <AppIcon name="close" size={16} color={theme.textSecondary} />
               </Pressable>
             </View>
 
             {signedIn === null ? (
               <View style={styles.centered}>
-                <ActivityIndicator color={Brand.lime} accessibilityLabel="Loading" />
+                <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Loading" />
               </View>
             ) : signedIn === false ? (
               <View style={styles.signedOut}>
-                <ThemedText style={styles.body}>
+                <ThemedText style={[styles.body, { color: theme.textSecondary }]}>
                   Sign in to add classmates. Catch Up shares notes between real accounts, so friends
                   need you signed in.
                 </ThemedText>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Sign in"
+                <AppButton
+                  title="Sign in"
                   onPress={() => {
                     onClose();
                     router.push('/login');
                   }}
-                  style={({ pressed }) => [styles.primary, pressed && styles.dim]}
-                >
-                  <ThemedText style={styles.primaryText}>Sign in</ThemedText>
-                </Pressable>
+                />
               </View>
             ) : (
               <>
-                <TextInput
+                <AppTextInput
+                  label="Find a classmate"
+                  accessibilityLabel="Search classmates by name"
                   value={query}
                   onChangeText={setQuery}
-                  placeholder="Search classmates by name"
-                  placeholderTextColor="#9FB3A3"
+                  placeholder="Search by name"
                   autoCapitalize="words"
                   autoCorrect={false}
-                  accessibilityLabel="Search classmates by name"
-                  style={styles.input}
                 />
 
                 <ScrollView
@@ -250,56 +273,44 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
                 >
                   {requests.length ? (
                     <View style={styles.group}>
-                      <ThemedText style={styles.label}>FRIEND REQUESTS</ThemedText>
+                      <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+                        Friend requests
+                      </ThemedText>
 
                       {requests.map((request) => (
-                        <View key={request.id} style={styles.row}>
-                          <View style={styles.avatar}>
-                            <ThemedText allowFontScaling={false} style={styles.avatarText}>
-                              {getInitials(request.from.name) || '··'}
-                            </ThemedText>
-                          </View>
-
+                        <View key={request.id} style={rowStyle}>
+                          {avatar(request.from.name)}
                           <View style={styles.rowCopy}>
                             <ThemedText style={styles.rowName}>{request.from.name}</ThemedText>
-                            <ThemedText style={styles.rowMeta}>
+                            <ThemedText style={[styles.rowMeta, { color: theme.textSecondary }]}>
                               {request.from.year} · {request.from.major}
                             </ThemedText>
                           </View>
-
-                          <Pressable
-                            accessibilityRole="button"
+                          <WorkspaceButton
+                            primary
+                            label={working === request.id ? 'Accepting…' : 'Accept'}
                             accessibilityLabel={`Accept ${request.from.name}`}
+                            busy={working === request.id}
                             disabled={working !== null}
                             onPress={() => accept(request)}
-                            style={({ pressed }) => [
-                              styles.action,
-                              (pressed || working !== null) && styles.dim,
-                            ]}
-                          >
-                            {working === request.id ? (
-                              <ActivityIndicator color={Brand.ink} />
-                            ) : (
-                              <ThemedText style={styles.actionText}>Accept</ThemedText>
-                            )}
-                          </Pressable>
+                          />
                         </View>
                       ))}
                     </View>
                   ) : null}
 
                   {searching ? (
-                    <ActivityIndicator color={Brand.lime} accessibilityLabel="Searching" />
+                    <ActivityIndicator color={theme.textSecondary} accessibilityLabel="Searching" />
                   ) : null}
 
                   {!searching && query.trim().length >= 2 && results.length === 0 ? (
-                    <ThemedText style={styles.rowMeta}>
+                    <ThemedText style={[styles.rowMeta, { color: theme.textSecondary }]}>
                       No classmate found with that name.
                     </ThemedText>
                   ) : null}
 
                   {!searching && query.trim().length < 2 && requests.length === 0 ? (
-                    <ThemedText style={styles.rowMeta}>
+                    <ThemedText style={[styles.rowMeta, { color: theme.textSecondary }]}>
                       Type at least two letters of a classmate&apos;s name to find them.
                     </ThemedText>
                   ) : null}
@@ -307,53 +318,35 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
                   {results.map((profile) => {
                     const state = states.get(profile.id);
                     return (
-                      <View key={profile.id} style={styles.row}>
-                        <View style={styles.avatar}>
-                          <ThemedText allowFontScaling={false} style={styles.avatarText}>
-                            {getInitials(profile.name) || '··'}
-                          </ThemedText>
-                        </View>
-
+                      <View key={profile.id} style={rowStyle}>
+                        {avatar(profile.name)}
                         <View style={styles.rowCopy}>
                           <ThemedText style={styles.rowName}>{profile.name}</ThemedText>
-                          <ThemedText style={styles.rowMeta}>
+                          <ThemedText style={[styles.rowMeta, { color: theme.textSecondary }]}>
                             {profile.year} · {profile.major}
                           </ThemedText>
                         </View>
-
                         {state ? (
-                          <View style={styles.badge}>
-                            <ThemedText style={styles.badgeText}>
+                          <View style={[styles.badge, { borderColor: theme.border }]}>
+                            <ThemedText style={[styles.badgeText, { color: theme.textSecondary }]}>
                               {state === 'accepted' ? 'Friends' : 'Pending'}
                             </ThemedText>
                           </View>
                         ) : (
-                          <Pressable
-                            accessibilityRole="button"
+                          <WorkspaceButton
+                            primary
+                            label={working === profile.id ? 'Adding…' : 'Add'}
                             accessibilityLabel={`Add ${profile.name}`}
+                            busy={working === profile.id}
                             disabled={working !== null}
                             onPress={() => add(profile)}
-                            style={({ pressed }) => [
-                              styles.action,
-                              (pressed || working !== null) && styles.dim,
-                            ]}
-                          >
-                            {working === profile.id ? (
-                              <ActivityIndicator color={Brand.ink} />
-                            ) : (
-                              <ThemedText style={styles.actionText}>Add</ThemedText>
-                            )}
-                          </Pressable>
+                          />
                         )}
                       </View>
                     );
                   })}
 
-                  {error ? (
-                    <ThemedText accessibilityLiveRegion="polite" style={styles.error}>
-                      {error}
-                    </ThemedText>
-                  ) : null}
+                  <FormError message={error} />
                 </ScrollView>
               </>
             )}
@@ -365,121 +358,79 @@ export function AddFriendSheet({ visible, onClose, onChanged }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(9,23,17,0.66)' },
+  root: { flex: 1, justifyContent: 'flex-end', backgroundColor: Scrim },
+  dialogRoot: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   lift: { width: '100%' },
+  dialogLift: { maxWidth: 480 },
 
   sheet: {
     width: '100%',
-    backgroundColor: Brand.forest,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: 20,
     paddingTop: 10,
     gap: 14,
   },
-
-  handle: {
-    width: 38,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: '#4E7060',
-    alignSelf: 'center',
+  dialog: {
+    borderRadius: Radius.large,
+    borderWidth: 1,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
 
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  headerCopy: { flex: 1, minWidth: 0, gap: 4 },
-  eyebrow: { color: Brand.lime, fontSize: 10, lineHeight: 16, letterSpacing: 1 },
-  title: { color: '#FFFFFF', fontSize: 24, lineHeight: 30, fontWeight: '600' },
+  handle: { width: 38, height: 4, borderRadius: Radius.pill, alignSelf: 'center' },
 
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  title: { flex: 1, fontSize: 20, lineHeight: 26, fontWeight: '600' },
   close: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     flexShrink: 0,
-    borderRadius: 17,
-    backgroundColor: '#1B3B2D',
+    borderRadius: Radius.medium,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  closeText: { color: '#DCE7DA', fontSize: 20, lineHeight: 24 },
-
-  input: {
-    minHeight: 50,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#FFFFFF',
-    backgroundColor: '#1B3B2D',
-    borderWidth: 1,
-    borderColor: '#3D6350',
-    fontSize: 16,
-    lineHeight: 22,
   },
 
   // flexShrink lets the list give way to the keyboard instead of pushing the
   // sheet past the bottom of the screen.
   list: { flexShrink: 1 },
-  listContent: { gap: 10, paddingBottom: 4 },
+  listContent: { gap: 8, paddingBottom: 4 },
 
-  group: { gap: 10 },
-  label: { color: Brand.lime, fontSize: 10, lineHeight: 16, letterSpacing: 1 },
+  group: { gap: 8 },
+  label: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: '#1B3B2D',
+    borderWidth: 1,
+    borderRadius: Radius.large,
+    padding: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     flexShrink: 0,
-    borderRadius: 14,
-    backgroundColor: '#2C5B43',
+    borderRadius: Radius.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: Brand.lime, fontSize: 13, fontWeight: '700' },
+  avatarText: { fontSize: 12.5, fontWeight: '600' },
   rowCopy: { flex: 1, minWidth: 0, gap: 2 },
-  rowName: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  rowMeta: { color: '#B9CEBF', fontSize: 13, lineHeight: 20 },
-
-  action: {
-    minHeight: 40,
-    minWidth: 84,
-    flexShrink: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: Brand.lime,
-  },
-  actionText: { color: Brand.ink, fontWeight: '700', fontSize: 14 },
+  rowName: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  rowMeta: { fontSize: 13, lineHeight: 19 },
 
   badge: {
-    minHeight: 40,
+    minHeight: 32,
     flexShrink: 0,
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderRadius: 12,
+    paddingHorizontal: 11,
+    borderRadius: Radius.medium,
     borderWidth: 1,
-    borderColor: '#3D6350',
   },
-  badgeText: { color: '#B9CEBF', fontSize: 13, fontWeight: '600' },
+  badgeText: { fontSize: 13, fontWeight: '600' },
 
   signedOut: { gap: 14, paddingBottom: 4 },
-  body: { color: '#DCE7DA', fontSize: 15, lineHeight: 23 },
-  primary: {
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: Brand.lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryText: { color: Brand.ink, fontWeight: '700' },
-
+  body: { fontSize: 15, lineHeight: 23 },
   centered: { paddingVertical: 28, alignItems: 'center' },
-  error: { color: '#F3C7C7', fontSize: 14, lineHeight: 21 },
-  dim: { opacity: 0.6 },
 });

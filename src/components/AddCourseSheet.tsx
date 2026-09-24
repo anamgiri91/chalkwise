@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { FormError } from '@/components/ui/AppTextInput';
 import { WorkspaceButton } from '@/components/ui/WorkspaceControls';
-import { Brand, Radius } from '@/constants/theme';
+import { Radius, Scrim } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { createCourse } from '@/services/courses';
@@ -44,7 +45,6 @@ type Props = {
 
 export function AddCourseSheet({ visible, onClose, onCreated }: Props) {
   const theme = useTheme();
-  const dark = theme.background !== Brand.paper;
   // Wide screens get a centered dialog; a full-width bottom sheet suits phones only.
   const dialog = useWindowDimensions().width >= 720;
 
@@ -268,14 +268,7 @@ export function AddCourseSheet({ visible, onClose, onCreated }: Props) {
                 />
               </View>
 
-              {error ? (
-                <ThemedText
-                  accessibilityLiveRegion="polite"
-                  style={[styles.error, { color: dark ? '#E7A6A6' : '#8C3B3B' }]}
-                >
-                  {error}
-                </ThemedText>
-              ) : null}
+              <FormError message={error} />
 
               <View style={[styles.actions, dialog && styles.dialogActions]}>
                 <WorkspaceButton
@@ -298,7 +291,7 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(9,23,17,0.66)',
+    backgroundColor: Scrim,
   },
 
   dialogBackdrop: {
@@ -321,8 +314,8 @@ const styles = StyleSheet.create({
 
   sheet: {
     flexShrink: 1,
-    borderTopLeftRadius: 34,
-    borderTopRightRadius: 34,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 36,
@@ -398,11 +391,6 @@ const styles = StyleSheet.create({
   suggestionCode: {
     fontSize: 15,
     fontWeight: '700',
-  },
-
-  error: {
-    fontSize: 14,
-    lineHeight: 21,
   },
 
   actions: {
