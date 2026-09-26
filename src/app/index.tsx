@@ -11,6 +11,7 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getStudyDashboard, getWorkspaceCapabilities } from '@/services/study';
 import { getInitials } from '@/features/profile/initials';
+import { getCatchupFeed, type CatchupGap } from '@/services/catchup';
 import {
   getReminderStatus,
   syncReviewReminders,
@@ -32,6 +33,7 @@ export default function HomeScreen() {
   const capabilities = getWorkspaceCapabilities();
   const [reminders, setReminders] = useState<ReminderStatus>('unsupported');
   const [reminderBusy, setReminderBusy] = useState(false);
+  const [gap, setGap] = useState<CatchupGap | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -44,6 +46,12 @@ export default function HomeScreen() {
           setData(result);
           // Keep device reminders in step with reviews saved on any device.
           void syncReviewReminders(result.lectures, result.reviews).catch(() => {});
+          // Surface the most recent class a classmate can help with; never block the page.
+          void getCatchupFeed(result.lectures)
+            .then((feed) => {
+              if (active) setGap(feed.gaps.find((item) => item.notes.length) ?? null);
+            })
+            .catch(() => {});
         })
         .catch((e) => {
           if (active) setError(e instanceof Error ? e.message : 'Could not open your workspace.');
@@ -187,6 +195,33 @@ export default function HomeScreen() {
                 onPress={() => void turnOnReminders()}
               />
             </View>
+          ) : null}
+
+          {gap ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Opens CatchUp"
+              onPress={() => router.push('/catchup')}
+              style={({ pressed, hovered }) => [
+                styles.prompt,
+                { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+              ]}
+            >
+              <AppIcon name="users" size={16} color={theme.accent} />
+              <View style={styles.promptCopy}>
+                <ThemedText style={styles.promptTitle}>
+                  No notes from {gap.startsAt.toLocaleDateString('en-US', { weekday: 'long' })}
+                  &apos;s {gap.course?.code ?? 'class'}
+                </ThemedText>
+                <ThemedText style={[styles.promptText, { color: theme.textSecondary }]}>
+                  {gap.notes[0].sharedBy?.name.split(' ')[0] ?? 'A classmate'} shared “
+                  {gap.notes[0].lecture.title}”
+                  {gap.notes.length > 1 ? ` and ${gap.notes.length - 1} more` : ''}.
+                </ThemedText>
+              </View>
+              <AppIcon name="chevron" size={15} color={theme.textTertiary} />
+            </Pressable>
           ) : null}
 
           {due.length ? (
