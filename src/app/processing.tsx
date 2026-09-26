@@ -11,6 +11,8 @@ type Theme = ReturnType<typeof useTheme>;
 
 import { parseCaptureSession } from '@/features/capture/captureSession';
 import { matchCourse } from '@/features/courses/matchCourse';
+import { courseInSession } from '@/features/courses/schedule';
+import { getMeetings } from '@/services/schedule';
 import { analyzeMaterials } from '@/services/ai';
 import { createCourse } from '@/services/courses';
 import { enrollInCourse, getMyEnrolledCourses } from '@/services/enrollment';
@@ -192,7 +194,17 @@ export default function ProcessingScreen() {
             course.current = courses.find((candidate) => candidate.id === courseId) ?? null;
 
           if (!course.current) {
-            const matched = matchCourse(analysis.current.suggestedCourse, courses);
+            // A course code written on the board wins; otherwise the class the student
+            // was in when they took the photos. Either way it must be an enrolled course.
+            const capturedAt = new Date(sessionResult.session?.createdAt ?? Date.now());
+            const scheduledId = courseInSession(
+              await getMeetings().catch(() => []),
+              Number.isNaN(capturedAt.getTime()) ? new Date() : capturedAt,
+            );
+            const matched =
+              matchCourse(analysis.current.suggestedCourse, courses) ??
+              courses.find((candidate) => candidate.id === scheduledId) ??
+              null;
             if (!matched) {
               // An empty course list is the normal clean start, not an error:
               // offer creation instead of dead-ending the capture.
@@ -267,7 +279,7 @@ export default function ProcessingScreen() {
     }
 
     void run();
-  }, [attempt, sources, courseId, invalidCaptureSession]);
+  }, [attempt, sources, courseId, invalidCaptureSession, sessionResult.session]);
 
   function retry() {
     router.replace('/capture');
