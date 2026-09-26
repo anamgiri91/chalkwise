@@ -64,3 +64,38 @@ test('attaching to an inaccessible lecture fails before a photo update', async (
   const repo = repository(database, {} as Storage);
   await assert.rejects(repo.attach(user, photoId, 'someone-elses-lecture'), { statusCode: 404 });
 });
+test('each review is also appended to the review log in the same transaction', async () => {
+  const lecture = 'lecture-1';
+  const due = new Date('2026-09-20T10:00:00Z');
+  const statements: { sql: string; params: unknown[] }[] = [];
+  let transactions = 0;
+  const database: Database = {
+    ping: async () => {},
+    close: async () => {},
+    asUser: async (id, work) => {
+      assert.equal(id, user);
+      transactions++;
+      return work({
+        query: async (sql: string, params: unknown[] = []) => {
+          statements.push({ sql, params });
+          if (sql.includes('FROM chalkwise.lectures')) return { rows: [{ id: lecture }] };
+          if (sql.startsWith('SELECT next_review_at')) return { rows: [{ next_review_at: due }] };
+          if (sql.startsWith('INSERT INTO chalkwise.reviews'))
+            return { rows: [{ lectureId: lecture, confidence: params[2] }] };
+          return { rows: [] };
+        },
+      } as unknown as PoolClient);
+    },
+  };
+  const unusedStorage = {} as Storage;
+  const saved = await repository(database, unusedStorage).review(user, lecture, 'good');
+  assert.equal(transactions, 1);
+  assert.deepEqual(saved, { lectureId: lecture, confidence: 'good' });
+  const upsert = statements.find((s) => s.sql.startsWith('INSERT INTO chalkwise.reviews'))!;
+  const event = statements.find((s) => s.sql.startsWith('INSERT INTO chalkwise.review_events'));
+  assert.ok(event, 'the review log must be written');
+  const [eventUser, eventLecture, confidence, scheduledFor, next] = event.params;
+  assert.deepEqual([eventUser, eventLecture, confidence], [user, lecture, 'good']);
+  assert.equal(scheduledFor, due, 'the log keeps when the review was due');
+  assert.equal(next, upsert.params[3], 'the log and the latest review agree');
+});

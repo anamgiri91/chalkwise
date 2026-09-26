@@ -26,7 +26,7 @@ test(
     const a = randomUUID(),
       b = randomUUID(),
       c = randomUUID(),
-      course = `test-${randomUUID()}`,
+      course = `test-${randomUUID().slice(0, 8)}`,
       lecture = randomUUID();
     const identity = (id: string) => db.query("SELECT set_config('app.user_id',$1,true)", [id]);
     try {

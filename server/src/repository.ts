@@ -322,12 +322,26 @@ export function repository(database: Database, storage: Storage) {
             user,
           ]),
         );
-        return one(
+        const previous = await one(
+          db,
+          'SELECT next_review_at FROM chalkwise.reviews WHERE user_id=$1 AND lecture_id=$2',
+          [user, id],
+        );
+        const next = nextReviewAt(confidence);
+        const saved = await one(
           db,
           `INSERT INTO chalkwise.reviews(user_id,lecture_id,confidence,next_review_at) VALUES($1,$2,$3,$4)
         ON CONFLICT(user_id,lecture_id) DO UPDATE SET confidence=EXCLUDED.confidence,reviewed_at=now(),next_review_at=EXCLUDED.next_review_at RETURNING ${reviewColumns}`,
-          [user, id, confidence, nextReviewAt(confidence)],
+          [user, id, confidence, next],
         );
+        // The latest review is overwritten above; this append-only row keeps the history
+        // a fitted schedule needs. Same transaction, so neither is saved without the other.
+        await db.query(
+          `INSERT INTO chalkwise.review_events(user_id,lecture_id,confidence,scheduled_for,next_review_at)
+           VALUES($1,$2,$3,$4,$5)`,
+          [user, id, confidence, previous?.next_review_at ?? null, next],
+        );
+        return saved;
       }),
     copyLecture: async (user: string, sourceId: string) => {
       const targetId = stableUuid(`copy:${user}:${sourceId}`);
