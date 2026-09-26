@@ -1,0 +1,173 @@
+{"about": "Labelled claims for the transcript support check in src/lib/grounding.ts. Each case pairs a board transcript with one generated claim. label 'supported' means a student could act on the claim as written; 'unsupported' means the claim would mislead them and should be removed. Transcripts and claims were written for this evaluation to resemble real board photos, not collected from real captures; they are an adversarial stress set, not a sample of production traffic. Transcripts marked 'holdout' must not be used to design or tune a verifier.", "version": 1}
+{"type": "transcript", "id": "t01", "split": "dev", "text": "CS 3358 Data Structures - Tues Sept 15\nToday: AVL trees, rotations (LL, RR, LR, RL)\nBalance factor = height(left) - height(right)\nHW 4 due Thurs Sept 24 by 11:59 pm on Canvas\nProgram 2 (AVL insert + delete) due Oct 2\nExam 1 Oct 8 in class, covers ch. 5-7\nNo lab Monday Oct 5 (fall break)"}
+{"type": "transcript", "id": "t02", "split": "dev", "text": "MATH 2358 Discrete Math\nInduction: base case, inductive step\nProblem Set 3: #2, #5, #9 from section 4.1. Due Friday at start of class\nQuiz 3 moved from Wed to next Monday\nMidterm is NOT cumulative - only sections 3.1-4.3\nOffice hrs cancelled this Thursday"}
+{"type": "transcript", "id": "t03", "split": "dev", "text": "CS2308 - Pointers & dynamic memory\nnew/delete, dangling pointers, memory leaks\nLab 6 due Sunday 11:59pm\nAssignment 3 (linked list) posted, due 10/14\nTest 2 on 10/21 - bring a scantron\nLab 6 is individual, not group work"}
+{"type": "transcript", "id": "t04", "split": "dev", "text": "HIST 1310 US History to 1877\nReconstruction era: 13th, 14th, 15th Amendments\nReading: Foner ch. 15, pp. 540-575 for Thursday\nResponse paper #2 (2 pages) due next Tuesday\nFinal exam Dec 10, 8:00-10:30 am\nPaper #1 grades posted"}
+{"type": "transcript", "id": "t05", "split": "dev", "text": "BIO 1330 Functional Biology\nCell respiration: glycolysis -> Krebs cycle -> ETC. ~36-38 ATP per glucose\nLab report 3 due in lab next week (Wed)\nExam 2 moved to Nov 3 (was Oct 29)\nExam covers ch 7-9 only\nMastering Biology HW ch 8 due Sun"}
+{"type": "transcript", "id": "t06", "split": "dev", "text": "CS 4350 SE\nSprint 2 review next Tues\nTeam deliverable: user stories + burndown chart, submit on GitHub Classroom by Mon 5pm\nIndividual peer eval due Friday\nNo quiz this week\nFinal presentation Dec 3 - 10 min per team"}
+{"type": "transcript", "id": "t07", "split": "dev", "text": "PHYS 1315 General Physics I\nNewton's 2nd law F = ma. Free-body diagrams!!\nWebAssign set 5 due Thurs 11pm\nLab: bring calculator, lab 4 write-up due at start of lab\nTest 2 is Wed Oct 14 - formula sheet provided, no notes allowed"}
+{"type": "transcript", "id": "t08", "split": "dev", "text": "ENG 1320 College Writing II\nArgument essay draft due Oct 1 for peer review (bring 2 printed copies)\nFinal draft due Oct 9 via Turnitin\nLibrary session Tues - meet in Alkek 101\nAnnotated bibliography: 6 sources min., due after the essay"}
+{"type": "transcript", "id": "t09", "split": "dev", "text": "CS 3339 Comp Arch\nMIPS pipelining: IF ID EX MEM WB\nHazards - data, control, structural. Forwarding.\nProject 1 (5-stage pipeline sim) due Oct 20\nHW 5 posted, due Oct 13, problems 4.1-4.9\nMidterm Oct 22: closed book, one page cheat sheet (both sides)"}
+{"type": "transcript", "id": "t10", "split": "dev", "text": "ACC 2361 Intro Financial Accounting\nJournal entries, T-accounts, trial balance\nConnect HW ch. 3 due Sept 29\nExam 1 Thursday Oct 1 (ch 1-4). Bring a basic calculator - no phones\nExtra credit: attend Beta Alpha Psi meeting, sign in sheet"}
+{"type": "transcript", "id": "t11", "split": "holdout", "text": "CS 4328 Operating Systems\nScheduling: FCFS, SJF, RR (q = 4ms), priority\nDeadlock: 4 conditions\nProgramming assignment 2 (shell) due Fri Oct 16, 11:59 pm; late penalty 10%/day\nQuiz 3 was pushed to next Tuesday\nExam 2 will NOT include deadlock avoidance"}
+{"type": "transcript", "id": "t12", "split": "holdout", "text": "MATH 2471 Calc I\nLimits -> derivatives. Power rule, product rule, quotient rule\nWebWork 6 due Mon 11pm\nWritten HW: sec 2.3 #1-25 odd, turn in Thursday\nTest 2 next Friday: sections 2.1-2.5, no calculators"}
+{"type": "transcript", "id": "t13", "split": "holdout", "text": "CHEM 1341 Gen Chem I\nStoichiometry, limiting reagent, % yield\nLab safety quiz must be passed before lab 2\nOWL assignment ch 4 due Wed 9am\nExam 2 Oct 27 6-8pm in RFM 2120 (evening exam!)\nNo make-up exams without documented excuse"}
+{"type": "transcript", "id": "t14", "split": "holdout", "text": "POSI 2310 Principles of American Govt\nFederalism, Article I sec 8, necessary & proper clause\nReading quiz on ch. 3 Thursday (online, opens 8am)\nCurrent events journal entry #4 due Sun\nMidterm postponed - new date TBA\nVoter registration drive table in LBJ Student Center"}
+{"type": "transcript", "id": "t15", "split": "holdout", "text": "CS 1428 Foundations of CS I\nLoops: while, do-while, for. Off-by-one errors!!\nProgram 4 due Oct 11 by midnight - submit .cpp on TRACS\nLab 7 is optional (bonus 5 pts)\nExam 2 Oct 15 - covers through functions, not arrays"}
+{"type": "transcript", "id": "t16", "split": "holdout", "text": "PSY 1300 Intro Psych\nClassical conditioning - Pavlov: UCS, UCR, CS, CR\nSONA research credits: 3 hrs required by Dec 4\nChapter 6 quiz on Canvas, due Mon night\nExam 3 Nov 12 covers ch 5-7\nStudy guide will be posted Fri"}
+{"type": "case", "id": "t01-01", "transcript": "t01", "claim": "HW 4 due Thursday, September 24", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t01-02", "transcript": "t01", "claim": "HW 4 due by 11:59 pm on Canvas", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t01-03", "transcript": "t01", "claim": "Program 2 (AVL insert and delete) due Oct 2", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t01-04", "transcript": "t01", "claim": "Exam 1 on October 8 covers chapters 5-7", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t01-05", "transcript": "t01", "claim": "Exam 1 is in class", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t01-06", "transcript": "t01", "claim": "HW 4 due Sept 22", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t01-07", "transcript": "t01", "claim": "Exam 1 covers chapters 5-8", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t01-08", "transcript": "t01", "claim": "Program 2 due Oct 8", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t01-09", "transcript": "t01", "claim": "Lab on Monday Oct 5", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t01-10", "transcript": "t01", "claim": "Quiz on AVL rotations Friday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t02-01", "transcript": "t02", "claim": "Problem Set 3: problems 2, 5 and 9 from section 4.1", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t02-02", "transcript": "t02", "claim": "Problem Set 3 due Friday at the start of class", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t02-03", "transcript": "t02", "claim": "Quiz 3 is next Monday", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t02-04", "transcript": "t02", "claim": "Midterm covers sections 3.1 to 4.3", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t02-05", "transcript": "t02", "claim": "Office hours cancelled Thursday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t02-06", "transcript": "t02", "claim": "Quiz 3 on Wednesday", "label": "unsupported", "category": "cancellation"}
+{"type": "case", "id": "t02-07", "transcript": "t02", "claim": "Midterm is cumulative", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t02-08", "transcript": "t02", "claim": "Problem Set 3 includes problem 7", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t02-09", "transcript": "t02", "claim": "Problem Set 4 due Friday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t02-10", "transcript": "t02", "claim": "Midterm Thursday", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t03-01", "transcript": "t03", "claim": "Lab 6 due Sunday at 11:59 pm", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t03-02", "transcript": "t03", "claim": "Assignment 3 (linked list) due 10/14", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t03-03", "transcript": "t03", "claim": "Assignment 3 due October 14", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t03-04", "transcript": "t03", "claim": "Test 2 on October 21", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t03-05", "transcript": "t03", "claim": "Bring a scantron to Test 2", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t03-06", "transcript": "t03", "claim": "Lab 6 is group work", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t03-07", "transcript": "t03", "claim": "Assignment 3 due 10/21", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t03-08", "transcript": "t03", "claim": "Test 2 on 10/12", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t03-09", "transcript": "t03", "claim": "Lab 7 due Sunday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t03-10", "transcript": "t03", "claim": "Read chapter 9 on pointers", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t04-01", "transcript": "t04", "claim": "Read Foner chapter 15, pages 540-575, for Thursday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t04-02", "transcript": "t04", "claim": "Response paper 2 (2 pages) due next Tuesday", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t04-03", "transcript": "t04", "claim": "Final exam December 10, 8:00-10:30 am", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t04-04", "transcript": "t04", "claim": "Paper 1 grades are posted", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t04-05", "transcript": "t04", "claim": "Final exam Dec 15", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t04-06", "transcript": "t04", "claim": "Response paper 1 due Tuesday", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t04-07", "transcript": "t04", "claim": "Response paper #2 is 5 pages", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t04-08", "transcript": "t04", "claim": "Quiz on the 13th Amendment Thursday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t05-01", "transcript": "t05", "claim": "Exam 2 on November 3", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t05-02", "transcript": "t05", "claim": "Exam 2 covers chapters 7-9", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t05-03", "transcript": "t05", "claim": "Lab report 3 due in lab next Wednesday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t05-04", "transcript": "t05", "claim": "Mastering Biology homework for chapter 8 due Sunday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t05-05", "transcript": "t05", "claim": "Exam 2 on October 29", "label": "unsupported", "category": "cancellation"}
+{"type": "case", "id": "t05-06", "transcript": "t05", "claim": "Exam 2 covers chapter 6", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t05-07", "transcript": "t05", "claim": "Lab report 3 due Sunday", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t05-08", "transcript": "t05", "claim": "Lab report 4 due Wednesday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t05-09", "transcript": "t05", "claim": "Exam 2 includes the Calvin cycle", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t06-01", "transcript": "t06", "claim": "Sprint 2 review next Tuesday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t06-02", "transcript": "t06", "claim": "Submit user stories and burndown chart on GitHub Classroom by Monday 5pm", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t06-03", "transcript": "t06", "claim": "Peer evaluation due Friday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t06-04", "transcript": "t06", "claim": "Final presentation December 3, 10 minutes per team", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t06-05", "transcript": "t06", "claim": "Team deliverable due Monday at 5pm", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t06-06", "transcript": "t06", "claim": "Quiz this week", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t06-07", "transcript": "t06", "claim": "Final presentation 15 minutes per team", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t06-08", "transcript": "t06", "claim": "Peer evaluation due Monday 5pm", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t06-09", "transcript": "t06", "claim": "Sprint 3 review Tuesday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t07-01", "transcript": "t07", "claim": "WebAssign set 5 due Thursday at 11 pm", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t07-02", "transcript": "t07", "claim": "Test 2 Wednesday October 14", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t07-03", "transcript": "t07", "claim": "Formula sheet provided for Test 2", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t07-04", "transcript": "t07", "claim": "Lab 4 write-up due at the start of lab", "label": "supported", "category": "verbatim"}
+{"type": "case", "id": "t07-05", "transcript": "t07", "claim": "Notes allowed on Test 2", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t07-06", "transcript": "t07", "claim": "Bring your own formula sheet to Test 2", "label": "unsupported", "category": "contradiction"}
+{"type": "case", "id": "t07-07", "transcript": "t07", "claim": "WebAssign set 4 due Thursday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t07-08", "transcript": "t07", "claim": "Test 2 on Oct 21", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t07-09", "transcript": "t07", "claim": "Lab 5 write-up due at start of lab", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t07-10", "transcript": "t07", "claim": "Free-body diagrams will be on the test", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t08-01", "transcript": "t08", "claim": "Argument essay draft due October 1 for peer review", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t08-02", "transcript": "t08", "claim": "Bring 2 printed copies of the draft", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t08-03", "transcript": "t08", "claim": "Final draft due October 9 on Turnitin", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t08-04", "transcript": "t08", "claim": "Library session Tuesday in Alkek 101", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t08-05", "transcript": "t08", "claim": "Annotated bibliography needs at least 6 sources", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t08-06", "transcript": "t08", "claim": "Final draft due Oct 1", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t08-07", "transcript": "t08", "claim": "Annotated bibliography due before the essay", "label": "unsupported", "category": "contradiction"}
+{"type": "case", "id": "t08-08", "transcript": "t08", "claim": "Annotated bibliography needs 10 sources", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t08-09", "transcript": "t08", "claim": "Final draft due Oct 19", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t08-10", "transcript": "t08", "claim": "Submit the draft on Canvas", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t09-01", "transcript": "t09", "claim": "Project 1: 5-stage pipeline simulator, due Oct 20", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t09-02", "transcript": "t09", "claim": "HW 5 due October 13, problems 4.1-4.9", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t09-03", "transcript": "t09", "claim": "Midterm October 22, closed book", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t09-04", "transcript": "t09", "claim": "One-page cheat sheet allowed, both sides", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t09-05", "transcript": "t09", "claim": "Midterm is open book", "label": "unsupported", "category": "contradiction"}
+{"type": "case", "id": "t09-06", "transcript": "t09", "claim": "Project 1 due Oct 22", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t09-07", "transcript": "t09", "claim": "HW 5 due Oct 20", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t09-08", "transcript": "t09", "claim": "HW 6 due October 13", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t09-09", "transcript": "t09", "claim": "Midterm Oct 29", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t09-10", "transcript": "t09", "claim": "Pipeline hazards quiz Friday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t10-01", "transcript": "t10", "claim": "Connect homework chapter 3 due September 29", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t10-02", "transcript": "t10", "claim": "Exam 1 on Thursday, October 1, covering chapters 1-4", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t10-03", "transcript": "t10", "claim": "Extra credit for attending a Beta Alpha Psi meeting", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t10-04", "transcript": "t10", "claim": "Bring a basic calculator to Exam 1", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t10-05", "transcript": "t10", "claim": "Phones allowed as calculators on Exam 1", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t10-06", "transcript": "t10", "claim": "Exam 1 covers chapters 1-5", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t10-07", "transcript": "t10", "claim": "Connect HW chapter 4 due Sept 29", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t10-08", "transcript": "t10", "claim": "Exam 1 Tuesday Oct 1", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t10-09", "transcript": "t10", "claim": "Exam 2 on October 1", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t10-10", "transcript": "t10", "claim": "Trial balance worksheet due Thursday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t11-01", "transcript": "t11", "claim": "Programming assignment 2 (shell) due Friday, October 16 at 11:59 pm", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t11-02", "transcript": "t11", "claim": "Late penalty of 10% per day", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t11-03", "transcript": "t11", "claim": "Quiz 3 next Tuesday", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t11-04", "transcript": "t11", "claim": "Round robin quantum is 4 ms", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t11-05", "transcript": "t11", "claim": "Quiz 3 today", "label": "unsupported", "category": "cancellation"}
+{"type": "case", "id": "t11-06", "transcript": "t11", "claim": "Exam 2 includes deadlock avoidance", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t11-07", "transcript": "t11", "claim": "Programming assignment 3 due Oct 16", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t11-08", "transcript": "t11", "claim": "Late penalty 5% per day", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t11-09", "transcript": "t11", "claim": "Programming assignment 2 due Oct 18", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t11-10", "transcript": "t11", "claim": "Exam 2 on deadlock conditions Tuesday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t12-01", "transcript": "t12", "claim": "WebWork 6 due Monday at 11 pm", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t12-02", "transcript": "t12", "claim": "Written homework: section 2.3 problems 1-25 odd, due Thursday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t12-03", "transcript": "t12", "claim": "Test 2 next Friday covering sections 2.1-2.5", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t12-04", "transcript": "t12", "claim": "No calculators on Test 2", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t12-05", "transcript": "t12", "claim": "Calculators allowed on Test 2", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t12-06", "transcript": "t12", "claim": "Test 2 covers sections 2.1-2.6", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t12-07", "transcript": "t12", "claim": "WebWork 7 due Monday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t12-08", "transcript": "t12", "claim": "Written HW due Monday", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t12-09", "transcript": "t12", "claim": "Test 2 on Thursday", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t12-10", "transcript": "t12", "claim": "Quiz on the chain rule Friday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t13-01", "transcript": "t13", "claim": "Pass the lab safety quiz before lab 2", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t13-02", "transcript": "t13", "claim": "OWL assignment chapter 4 due Wednesday at 9 am", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t13-03", "transcript": "t13", "claim": "Exam 2 on October 27, 6-8 pm, in RFM 2120", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t13-04", "transcript": "t13", "claim": "Exam 2 is an evening exam", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t13-05", "transcript": "t13", "claim": "Exam 2 is during regular class time", "label": "unsupported", "category": "contradiction"}
+{"type": "case", "id": "t13-06", "transcript": "t13", "claim": "Exam 2 on Oct 29", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t13-07", "transcript": "t13", "claim": "OWL assignment chapter 5 due Wednesday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t13-08", "transcript": "t13", "claim": "Make-up exams available without documentation", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t13-09", "transcript": "t13", "claim": "OWL assignment due Oct 27", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t13-10", "transcript": "t13", "claim": "Lab report 2 due Wednesday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t14-01", "transcript": "t14", "claim": "Reading quiz on chapter 3 Thursday, online", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t14-02", "transcript": "t14", "claim": "Current events journal entry 4 due Sunday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t14-03", "transcript": "t14", "claim": "Midterm postponed, new date to be announced", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t14-04", "transcript": "t14", "claim": "Reading quiz opens at 8am", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t14-05", "transcript": "t14", "claim": "Midterm Thursday", "label": "unsupported", "category": "cancellation"}
+{"type": "case", "id": "t14-06", "transcript": "t14", "claim": "Journal entry 5 due Sunday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t14-07", "transcript": "t14", "claim": "Reading quiz on chapter 8 Thursday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t14-08", "transcript": "t14", "claim": "Reading quiz opens at 9am", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t14-09", "transcript": "t14", "claim": "Journal entry due Thursday", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t14-10", "transcript": "t14", "claim": "Essay on federalism due Sunday", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t15-01", "transcript": "t15", "claim": "Program 4 due October 11 by midnight", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t15-02", "transcript": "t15", "claim": "Submit the .cpp file on TRACS", "label": "supported", "category": "paraphrase"}
+{"type": "case", "id": "t15-03", "transcript": "t15", "claim": "Lab 7 is optional, 5 bonus points", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t15-04", "transcript": "t15", "claim": "Exam 2 October 15 covers through functions", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t15-05", "transcript": "t15", "claim": "Lab 7 is required", "label": "unsupported", "category": "contradiction"}
+{"type": "case", "id": "t15-06", "transcript": "t15", "claim": "Exam 2 covers arrays", "label": "unsupported", "category": "negation"}
+{"type": "case", "id": "t15-07", "transcript": "t15", "claim": "Program 4 due Oct 15", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t15-08", "transcript": "t15", "claim": "Program 5 due Oct 11", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t15-09", "transcript": "t15", "claim": "Exam 2 Oct 16", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t15-10", "transcript": "t15", "claim": "Program 4 submitted on Canvas", "label": "unsupported", "category": "invented"}
+{"type": "case", "id": "t16-01", "transcript": "t16", "claim": "3 hours of SONA research credit due December 4", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t16-02", "transcript": "t16", "claim": "Chapter 6 quiz on Canvas due Monday night", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t16-03", "transcript": "t16", "claim": "Exam 3 on November 12 covers chapters 5-7", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t16-04", "transcript": "t16", "claim": "Study guide posted Friday", "label": "supported", "category": "reformatted"}
+{"type": "case", "id": "t16-05", "transcript": "t16", "claim": "SONA credits due Nov 12", "label": "unsupported", "category": "misattribution"}
+{"type": "case", "id": "t16-06", "transcript": "t16", "claim": "Exam 3 covers chapters 5-8", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t16-07", "transcript": "t16", "claim": "Chapter 7 quiz due Monday", "label": "unsupported", "category": "changed_number"}
+{"type": "case", "id": "t16-08", "transcript": "t16", "claim": "Exam 3 Nov 14", "label": "unsupported", "category": "changed_date"}
+{"type": "case", "id": "t16-09", "transcript": "t16", "claim": "Study guide already posted", "label": "unsupported", "category": "contradiction"}
+{"type": "case", "id": "t16-10", "transcript": "t16", "claim": "Exam 3 is open notes", "label": "unsupported", "category": "invented"}
