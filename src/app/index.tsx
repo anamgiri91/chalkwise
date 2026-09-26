@@ -11,6 +11,12 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getStudyDashboard, getWorkspaceCapabilities } from '@/services/study';
 import { getInitials } from '@/features/profile/initials';
+import {
+  getReminderStatus,
+  syncReviewReminders,
+  turnOnReviewReminders,
+  type ReminderStatus,
+} from '@/services/reminders';
 
 const MAX_ROWS = 6;
 
@@ -24,6 +30,8 @@ export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const capabilities = getWorkspaceCapabilities();
+  const [reminders, setReminders] = useState<ReminderStatus>('unsupported');
+  const [reminderBusy, setReminderBusy] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -32,7 +40,10 @@ export default function HomeScreen() {
       setError('');
       getStudyDashboard()
         .then((result) => {
-          if (active) setData(result);
+          if (!active) return;
+          setData(result);
+          // Keep device reminders in step with reviews saved on any device.
+          void syncReviewReminders(result.lectures, result.reviews).catch(() => {});
         })
         .catch((e) => {
           if (active) setError(e instanceof Error ? e.message : 'Could not open your workspace.');
@@ -40,11 +51,27 @@ export default function HomeScreen() {
         .finally(() => {
           if (active) setLoading(false);
         });
+      void getReminderStatus()
+        .then((status) => {
+          if (active) setReminders(status);
+        })
+        .catch(() => {});
       return () => {
         active = false;
       };
     }, [attempt]),
   );
+
+  async function turnOnReminders() {
+    setReminderBusy(true);
+    try {
+      setReminders(await turnOnReviewReminders());
+    } catch {
+      setReminders('disabled');
+    } finally {
+      setReminderBusy(false);
+    }
+  }
 
   const courseFor = (id: string) => data?.courses.find((course) => course.id === id);
   const label = (id: string) => courseFor(id)?.code ?? 'No course';
@@ -139,6 +166,29 @@ export default function HomeScreen() {
         </Section>
       ) : (
         <>
+          {reminders === 'disabled' && data?.lectures.length ? (
+            <View
+              style={[
+                styles.prompt,
+                { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+              ]}
+            >
+              <AppIcon name="clock" size={16} color={theme.textSecondary} />
+              <View style={styles.promptCopy}>
+                <ThemedText style={styles.promptTitle}>Get a nudge when a review is due</ThemedText>
+                <ThemedText style={[styles.promptText, { color: theme.textSecondary }]}>
+                  One reminder per review, only between 9 am and 9 pm.
+                </ThemedText>
+              </View>
+              <WorkspaceButton
+                label={reminderBusy ? 'Turning on…' : 'Turn on'}
+                accessibilityLabel="Turn on review reminders"
+                busy={reminderBusy}
+                onPress={() => void turnOnReminders()}
+              />
+            </View>
+          ) : null}
+
           {due.length ? (
             <Section label="Due for review" count={due.length}>
               <RowGroup>
@@ -261,4 +311,15 @@ const styles = StyleSheet.create({
   },
   noticeText: { fontSize: 12.5, lineHeight: 18, fontWeight: '500' },
   footnote: { fontSize: 12, lineHeight: 16, marginTop: 4 },
+  prompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: Radius.large,
+  },
+  promptCopy: { flex: 1, minWidth: 0, gap: 2 },
+  promptTitle: { fontSize: 13.5, lineHeight: 19, fontWeight: '600' },
+  promptText: { fontSize: 12.5, lineHeight: 18 },
 });

@@ -13,6 +13,12 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getMyProfile, saveMyProfile, signOut } from '@/services/auth';
 import { getWorkspaceCapabilities } from '@/services/study';
+import {
+  disableReviewReminders,
+  getReminderStatus,
+  turnOnReviewReminders,
+  type ReminderStatus,
+} from '@/services/reminders';
 import { years, type Profile, type Year } from '@/types';
 
 export default function ProfileScreen() {
@@ -28,6 +34,33 @@ export default function ProfileScreen() {
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [reminders, setReminders] = useState<ReminderStatus>('unsupported');
+  const [reminderBusy, setReminderBusy] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void getReminderStatus()
+        .then((status) => {
+          if (active) setReminders(status);
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
+  async function toggleReminders() {
+    setReminderBusy(true);
+    try {
+      setReminders(
+        reminders === 'enabled' ? await disableReviewReminders() : await turnOnReviewReminders(),
+      );
+    } catch {
+      setError('Could not change reminders. Try again.');
+    } finally {
+      setReminderBusy(false);
+    }
+  }
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -200,6 +233,39 @@ export default function ProfileScreen() {
             </RowGroup>
           </Section>
 
+          <Section label="Reminders">
+            <RowGroup>
+              <View style={styles.setting}>
+                <AppIcon name="clock" size={15} color={theme.textSecondary} />
+                <View style={styles.settingCopy}>
+                  <ThemedText style={styles.settingTitle}>Review reminders</ThemedText>
+                  <ThemedText style={[styles.note, { color: theme.textTertiary }]}>
+                    {reminders === 'unsupported'
+                      ? 'Reminders come from the iPhone and Android app. Here, due reviews show on your Overview.'
+                      : reminders === 'denied'
+                        ? 'Notifications are off for Chalkwise. Turn them on in your phone’s Settings.'
+                        : reminders === 'enabled'
+                          ? 'On. One reminder per review, between 9 am and 9 pm.'
+                          : 'Off. Turn on to get a reminder when a review is due.'}
+                  </ThemedText>
+                </View>
+                {reminders === 'unsupported' ? null : (
+                  <WorkspaceButton
+                    primary={reminders !== 'enabled'}
+                    label={reminders === 'enabled' ? 'Turn off' : 'Turn on'}
+                    accessibilityLabel={
+                      reminders === 'enabled'
+                        ? 'Turn off review reminders'
+                        : 'Turn on review reminders'
+                    }
+                    busy={reminderBusy}
+                    onPress={() => void toggleReminders()}
+                  />
+                )}
+              </View>
+            </RowGroup>
+          </Section>
+
           <Section label="Sharing">
             <View
               style={[
@@ -271,4 +337,14 @@ const styles = StyleSheet.create({
   signOut: { justifyContent: 'center', minHeight: 44, paddingHorizontal: 14 },
   signOutLabel: { fontSize: 13.5, lineHeight: 19, fontWeight: '600' },
   footnote: { fontSize: 12, lineHeight: 16, marginTop: 4 },
+  setting: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 52,
+  },
+  settingCopy: { flex: 1, minWidth: 0, gap: 2 },
+  settingTitle: { fontSize: 13.5, lineHeight: 19, fontWeight: '600' },
 });
