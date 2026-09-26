@@ -40,6 +40,41 @@ adapter. See `docs/architecture/FULL_STACK_PLAN.md` for scope and verification g
 - Mock mode opens a populated demo workspace. Mock profile/enrollment changes are
   in-memory only. Mock capture uploads and AI calls still reject, never fake success.
 
+### Study features (September 2026, approved)
+
+Migration `server/migrations/003_study_features.sql` is additive and not applied
+anywhere yet. Every new type field is optional, so existing callers are unchanged.
+
+- **Note sources.** `Lecture.sources` / `LectureAnalysis.sources` (`NoteSources`) give,
+  for each line of keyConcepts, importantPoints, assignments and examMentions, the
+  1-based original photo it came from, or null. The server computes them by matching
+  each line against each photo's transcript (`sourcePhotoOf` in `src/lib/grounding.ts`).
+  The AI result contract is unchanged, and the organizer cannot supply sources.
+  Misaligned sources are dropped, never guessed.
+- **Editing.** `updateLecture(id, LectureEdit)` → PUT /v1/lectures/:id, owner only.
+  It sets `Lecture.editedAt`. Originals are never modified. Copies keep sources and the
+  original photo order.
+- **Class times.** `CourseMeeting { courseId, weekday (0 = Sunday), start, end }` in
+  local "HH:MM". `getMeetings()` → GET /v1/meetings. `setCourseMeetings(courseId,
+  meetings)` → PUT /v1/courses/:id/meetings replaces one course's times and requires
+  enrollment. A capture is filed under the class in session (10 minutes before to 30
+  minutes after) when the board shows no matching course code.
+- **Catch-up.** `getCatchupFeed()` also returns `gaps`: classes in the past seven days
+  with none of the student's own notes, and friends' shared notes from them. The wording
+  is "no notes from", never "missed".
+- **Quizzes.** `QuizAttempt { id, lectureId, attemptedAt, score, total, missed }`.
+  `recordQuizAttempt` → POST and `getQuizAttempts` → GET /v1/lectures/:id/quiz-attempts,
+  owner only and append-only. A full quiz on an owned notebook records a review
+  (all correct: easy; 60% or more: good; otherwise again). Retakes and retries of
+  missed questions are practice and record nothing.
+- **Reminders.** `expo-notifications` schedules local notifications on iOS and Android
+  only, opt-in, between 9:00 and 21:00, grouped within an hour, at most 30. There is no
+  push server or device token. Tapping a reminder opens its notebook.
+- **Demo data.** Mock mode now returns two bundled sample board photos for the Binary
+  Search Trees notebook (so `getMaterials` is no longer always empty in mock), sample
+  class times, and one read-only demo classmate note dated to the latest Data Structures
+  class. Mock AI calls still reject.
+
 The sections below are the preserved legacy Supabase implementation contracts.
 
 Read this file before frontend or backend work. These are the current contracts,

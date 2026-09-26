@@ -62,9 +62,11 @@ These are results on 60 claims I held back and didn't look at while building the
 ## Features
 
 - **Capture:** camera with blur and exposure checks. Up to six photos per lecture, analyzed together into one set of notes.
-- **Notebooks:** your originals stay separate from anything the AI wrote. You can test yourself before revealing the notes.
-- **Ask and quiz:** ask questions about a lecture or generate a quiz from it.
-- **Review:** after each review you say how well you remembered it, and it schedules the next one for 4 hours, 1 day or 3 days later.
+- **Auto-filing:** add when each class meets, and photos taken during class go straight into that course.
+- **Notebooks:** your originals stay separate from anything the AI wrote. Every note line links to the photo it came from, and you can fix anything the AI misread.
+- **Ask and quiz:** ask questions about a lecture or generate a quiz from it. Your scores are saved, you can retry just the questions you missed, and a quiz counts as a review.
+- **Review:** test yourself before the notes are shown, then say how well you remembered. The next review is 4 hours, 1 day or 3 days later, and the phone app reminds you when it's due.
+- **Catch-up:** see which classes this week you have no notes from, and what your friends shared from them.
 - **Sharing:** add friends and share a notebook with them. Only accepted friends in the same course can see it, and they can save their own copy.
 - **Accounts:** email confirmation, sign-in, password reset, profiles, courses and enrollment.
 - **Demo mode:** a filled-in demo so you can try it without any accounts or cloud setup.
@@ -176,8 +178,9 @@ The test suite covers:
 
 - Signed-token rejection, request validation, access gates, and safe errors
 - Upload recovery and session races
-- Review scheduling and capture-quality checks
-- AI result validation, multi-photo analysis, and transcript support checking
+- Review scheduling, reminder timing, and capture-quality checks
+- AI result validation, multi-photo analysis, transcript support checking, and linking notes to photos
+- Class-time detection across time zones, weekly catch-up, and quiz scoring
 - Ambiguous course matching
 
 **Database isolation tests** run against a disposable local PostgreSQL database, using the restricted runtime login. They are skipped unless you pass the URL explicitly:
@@ -220,8 +223,9 @@ chalkwise/
 - [x] Friend-based notebook sharing
 - [x] AWS backend with Cognito, RLS-protected PostgreSQL, and private S3
 - [ ] Live AWS provisioning and Supabase cutover
+- [x] Review reminders, editable notes linked to their photos, class-time filing, weekly catch-up, and saved quizzes
 - [ ] Durable resume after the app closes, and background processing
-- [ ] Review notifications
+- [ ] A review schedule fitted to real review history (the model and fitting script are ready; it needs pilot data)
 
 ## Documentation
 
