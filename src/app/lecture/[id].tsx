@@ -13,7 +13,7 @@ import { NotesEditor } from '@/components/NotesEditor';
 import { PhotoViewer } from '@/components/PhotoViewer';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { getLecture, updateLecture } from '@/services/lectures';
+import { getLecture, isDemoSharedLecture, updateLecture } from '@/services/lectures';
 import { getCourse } from '@/services/courses';
 import { getMaterialUrl, getMaterials } from '@/services/materials';
 import {
@@ -301,7 +301,7 @@ export default function LectureNotebookScreen() {
         setReview(noteReview);
         const reviewable =
           capabilities.reviews &&
-          (capabilities.mode === 'mock' ||
+          ((capabilities.mode === 'mock' && !isDemoSharedLecture(id)) ||
             (sharingResult.status === 'fulfilled' && sharingResult.value?.canEdit === true));
         // Active recall: a due notebook starts with its notes hidden until the student reveals them.
         const due =
@@ -403,9 +403,10 @@ export default function LectureNotebookScreen() {
         </Section>
       </Screen>
     );
-  const canReview =
-    capabilities.reviews && (capabilities.mode === 'mock' || sharing?.canEdit === true);
-  const canEdit = capabilities.mode === 'mock' || sharing?.canEdit === true;
+  // The demo classmate's note behaves like any shared note: read it, copy it, never edit it.
+  const ownDemo = capabilities.mode === 'mock' && !isDemoSharedLecture(id);
+  const canReview = capabilities.reviews && (ownDemo || sharing?.canEdit === true);
+  const canEdit = ownDemo || sharing?.canEdit === true;
   const openSource = (photo: number, line: string) =>
     setViewer({ index: photo - 1, context: line });
   const list = (label: string, key: NoteListKey) => (
@@ -663,7 +664,7 @@ export default function LectureNotebookScreen() {
             </View>
           </RowGroup>
         </Section>
-      ) : sharing ? (
+      ) : sharing || isDemoSharedLecture(id) ? (
         <Section label="Sharing">
           <RowGroup>
             <View style={styles.control}>

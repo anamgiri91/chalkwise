@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/api';
 import { getApiSession } from '@/lib/cognito';
 import type { CreateLectureInput, Lecture, LectureEdit } from '@/types';
 import { getCourse } from './courses';
+import { occurrencesBetween } from '@/features/courses/schedule';
 
 type LectureRow = {
   id: string;
@@ -53,6 +54,47 @@ function copy(lecture: Lecture): Lecture {
 }
 
 const lectures = mockLectures.map(copy);
+
+/**
+ * The offline demo's one classmate note, dated to the most recent Data Structures class
+ * so weekly catch-up always has something to show. It is read-only and labelled as a demo.
+ */
+export const DEMO_CLASSMATE_ID = 'demo-classmate';
+const DEMO_SHARED_ID = 'demo-shared-avl-rotations';
+let demoShared: (Lecture & { ownerId: string }) | null = null;
+function demoSharedLecture(): Lecture & { ownerId: string } {
+  if (demoShared) return demoShared;
+  const now = new Date();
+  const classes = occurrencesBetween(
+    [
+      { courseId: 'cs-3358', weekday: 2, start: '09:30', end: '10:50' },
+      { courseId: 'cs-3358', weekday: 4, start: '09:30', end: '10:50' },
+    ],
+    new Date(now.getTime() - 7 * 86_400_000),
+    now,
+  );
+  const last = classes.at(-1)?.endsAt ?? new Date(now.getTime() - 2 * 86_400_000);
+  demoShared = {
+    id: DEMO_SHARED_ID,
+    ownerId: DEMO_CLASSMATE_ID,
+    courseId: 'cs-3358',
+    title: 'AVL Rotations',
+    summary:
+      'AVL trees stay balanced by checking each node’s balance factor after an insert and rotating when it leaves the range −1 to 1.',
+    keyConcepts: ['Balance factor', 'Single rotations (LL, RR)', 'Double rotations (LR, RL)'],
+    importantPoints: [
+      'Balance factor = height(left) − height(right).',
+      'An AVL tree’s height stays O(log n), so search stays O(log n).',
+    ],
+    assignments: ['Program 2: AVL insert and delete.'],
+    examMentions: ['Rotations will be on Exam 1.'],
+    createdAt: new Date(last.getTime() - 5 * 60_000).toISOString(),
+  };
+  return demoShared;
+}
+export function isDemoSharedLecture(id: string): boolean {
+  return id === DEMO_SHARED_ID;
+}
 let nextId = 1;
 const apiSaveKeys = new Map<string, string>();
 
@@ -82,6 +124,7 @@ export async function getLectures(courseId: string): Promise<Lecture[]> {
 export async function getLecture(id: string): Promise<Lecture | null> {
   if (getDataMode() === 'api') return apiRequest(`/lectures/${encodeURIComponent(id)}`);
   if (getDataMode() === 'mock') {
+    if (isDemoSharedLecture(id)) return copy(demoSharedLecture());
     const lecture = lectures.find((item) => item.id === id);
     return lecture ? copy(lecture) : null;
   }
@@ -177,6 +220,10 @@ export async function getLecturesByOwners(ownerIds: string[]): Promise<SharedLec
     return ownerIds.length
       ? apiRequest(`/shared-lectures?owners=${encodeURIComponent(ownerIds.slice(0, 40).join(','))}`)
       : [];
+  if (getDataMode() === 'mock')
+    return ownerIds.includes(DEMO_CLASSMATE_ID)
+      ? [{ ...copy(demoSharedLecture()), ownerId: DEMO_CLASSMATE_ID }]
+      : [];
   if (getDataMode() !== 'supabase' || !ownerIds.length) return [];
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase
@@ -196,6 +243,16 @@ export async function copyLectureToMyNotes(lectureId: string, courseId?: string)
     if (courseId && (await getLecture(lectureId))?.courseId !== courseId)
       throw new Error('Shared notes must stay in their matching course.');
     return apiRequest(`/lectures/${encodeURIComponent(lectureId)}/copy`, { method: 'POST' });
+  }
+  if (getDataMode() === 'mock') {
+    if (!isDemoSharedLecture(lectureId)) throw new Error('That shared notebook is not available.');
+    const id = `copy-${lectureId}`;
+    const existing = lectures.find((lecture) => lecture.id === id);
+    if (existing) return copy(existing);
+    const { ownerId: _owner, ...source } = demoSharedLecture();
+    const saved = copy({ ...source, id, createdAt: new Date().toISOString() });
+    lectures.unshift(saved);
+    return copy(saved);
   }
   if (getDataMode() !== 'supabase')
     throw new Error('Catch Up requires EXPO_PUBLIC_DATA_MODE=supabase.');

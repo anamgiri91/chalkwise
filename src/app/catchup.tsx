@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { AddFriendSheet } from '@/components/AddFriendSheet';
 import { AppIcon } from '@/components/ui/AppIcon';
@@ -10,7 +10,7 @@ import { SkeletonPage } from '@/components/ui/Skeleton';
 import { Screen } from '@/components/ui/Screen';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { getCatchupFeed } from '@/services/catchup';
+import { getCatchupFeed, type CatchupNote } from '@/services/catchup';
 import { copyLectureToMyNotes } from '@/services/lectures';
 import { getWorkspaceCapabilities } from '@/services/study';
 
@@ -27,7 +27,7 @@ import { getWorkspaceCapabilities } from '@/services/study';
 /** Whose notes a friendship exposes, which is not the same in every workspace. */
 const sharingNote: Record<ReturnType<typeof getWorkspaceCapabilities>['mode'], string> = {
   api: 'Friendship alone does not share your notes. Choose what to share from each notebook.',
-  mock: 'This demo has no live classmates. A connected workspace supports friend requests and shared notes.',
+  mock: 'Jordan Lee is a demo classmate. A connected workspace supports friend requests and shared notes.',
   supabase: 'Your legacy workspace keeps its existing friend-sharing settings.',
 };
 
@@ -83,9 +83,84 @@ export default function CatchupScreen() {
 
   const friends = data?.friends ?? [];
   const notes = data?.notes ?? [];
+  const gaps = data?.gaps ?? [];
+  const day = (date: Date) =>
+    date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   // Metadata columns are fixed width, so a narrow screen drops the ones it can
   // afford to lose rather than squeezing the notebook title out of the row.
   const columns = width >= 700 ? 3 : width >= 500 ? 2 : 1;
+
+  function noteRow(item: CatchupNote, index: number) {
+    const id = item.lecture.id;
+    const mine = copies[id];
+    const name = item.sharedBy?.name ?? 'A classmate';
+    const shortened = columns === 1 ? name.split(' ')[0] : name;
+    const credit = item.demo ? `${shortened} · Demo` : shortened;
+    return (
+      <Row
+        key={id}
+        first={index === 0}
+        title={item.lecture.title}
+        meta={[
+          columns >= 3 ? (item.course?.code ?? 'No course') : null,
+          credit,
+          columns >= 2 ? since(item.lecture.createdAt) : null,
+        ]}
+        accessibilityHint="Opens the notebook this classmate shared"
+        onPress={() => router.push({ pathname: '/lecture/[id]', params: { id } })}
+        trailing={
+          mine ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open my copy of ${item.lecture.title}`}
+              onPress={(event) => {
+                event.stopPropagation();
+                router.push({ pathname: '/lecture/[id]', params: { id: mine } });
+              }}
+              hitSlop={9}
+              style={({ pressed, hovered }) => [
+                styles.action,
+                {
+                  borderColor: theme.accent,
+                  backgroundColor: theme.accentSurface,
+                },
+                (pressed || hovered) && styles.dim,
+              ]}
+            >
+              <ThemedText style={[styles.actionLabel, { color: theme.accent }]}>
+                Open my copy
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${item.lecture.title} to my notes`}
+              accessibilityHint="Copies the notes and the original photos into a new notebook you own"
+              disabled={busy !== null}
+              onPress={(event) => {
+                event.stopPropagation();
+                void copy(id);
+              }}
+              hitSlop={9}
+              style={({ pressed, hovered }) => [
+                styles.action,
+                {
+                  borderColor: theme.borderStrong,
+                  backgroundColor:
+                    pressed || hovered ? theme.backgroundSelected : theme.backgroundElement,
+                },
+                busy !== null && styles.faded,
+              ]}
+            >
+              <ThemedText style={[styles.actionLabel, { color: theme.text }]}>
+                {busy === id ? 'Copying…' : 'Add to my notes'}
+              </ThemedText>
+            </Pressable>
+          )
+        }
+      />
+    );
+  }
 
   return (
     <>
@@ -123,6 +198,38 @@ export default function CatchupScreen() {
           <SkeletonPage label="Loading shared notebooks" />
         ) : (
           <>
+            {gaps.length ? (
+              <Section label="This week" count={gaps.length}>
+                <ThemedText style={[styles.note, { color: theme.textSecondary }]}>
+                  Classes you have no notes from, and what classmates shared from them.
+                </ThemedText>
+                {gaps.map((gap) => (
+                  <View key={`${gap.courseId}:${gap.startsAt.toISOString()}`} style={styles.gap}>
+                    <View style={styles.gapHead}>
+                      <AppIcon name="clock" size={15} color={theme.textSecondary} />
+                      <ThemedText style={styles.gapTitle}>
+                        {day(gap.startsAt)} · {gap.course?.code ?? 'A class'}
+                      </ThemedText>
+                    </View>
+                    <RowGroup>
+                      {gap.notes.length ? (
+                        gap.notes.map(noteRow)
+                      ) : (
+                        <Row
+                          first
+                          title="No classmate has shared notes from this class yet"
+                          meta={[
+                            canAddFriends ? 'Add classmates in this course' : 'Demo workspace',
+                          ]}
+                          onPress={canAddFriends ? () => setFriendOpen(true) : undefined}
+                        />
+                      )}
+                    </RowGroup>
+                  </View>
+                ))}
+              </Section>
+            ) : null}
+
             <Section
               label="Friends"
               count={friends.length}
@@ -156,79 +263,7 @@ export default function CatchupScreen() {
             <Section label="Shared notebooks" count={notes.length}>
               <RowGroup>
                 {notes.length ? (
-                  notes.map((item, index) => {
-                    const id = item.lecture.id;
-                    const mine = copies[id];
-                    const name = item.sharedBy?.name ?? 'A classmate';
-                    const shortened = columns === 1 ? name.split(' ')[0] : name;
-                    const credit = item.demo ? `${shortened} · Demo` : shortened;
-                    return (
-                      <Row
-                        key={id}
-                        first={index === 0}
-                        title={item.lecture.title}
-                        meta={[
-                          columns >= 3 ? (item.course?.code ?? 'No course') : null,
-                          credit,
-                          columns >= 2 ? since(item.lecture.createdAt) : null,
-                        ]}
-                        accessibilityHint="Opens the notebook this classmate shared"
-                        onPress={() => router.push({ pathname: '/lecture/[id]', params: { id } })}
-                        trailing={
-                          mine ? (
-                            <Pressable
-                              accessibilityRole="button"
-                              accessibilityLabel={`Open my copy of ${item.lecture.title}`}
-                              onPress={(event) => {
-                                event.stopPropagation();
-                                router.push({ pathname: '/lecture/[id]', params: { id: mine } });
-                              }}
-                              hitSlop={9}
-                              style={({ pressed, hovered }) => [
-                                styles.action,
-                                {
-                                  borderColor: theme.accent,
-                                  backgroundColor: theme.accentSurface,
-                                },
-                                (pressed || hovered) && styles.dim,
-                              ]}
-                            >
-                              <ThemedText style={[styles.actionLabel, { color: theme.accent }]}>
-                                Open my copy
-                              </ThemedText>
-                            </Pressable>
-                          ) : (
-                            <Pressable
-                              accessibilityRole="button"
-                              accessibilityLabel={`Add ${item.lecture.title} to my notes`}
-                              accessibilityHint="Copies the notes and the original photos into a new notebook you own"
-                              disabled={busy !== null}
-                              onPress={(event) => {
-                                event.stopPropagation();
-                                void copy(id);
-                              }}
-                              hitSlop={9}
-                              style={({ pressed, hovered }) => [
-                                styles.action,
-                                {
-                                  borderColor: theme.borderStrong,
-                                  backgroundColor:
-                                    pressed || hovered
-                                      ? theme.backgroundSelected
-                                      : theme.backgroundElement,
-                                },
-                                busy !== null && styles.faded,
-                              ]}
-                            >
-                              <ThemedText style={[styles.actionLabel, { color: theme.text }]}>
-                                {busy === id ? 'Copying…' : 'Add to my notes'}
-                              </ThemedText>
-                            </Pressable>
-                          )
-                        }
-                      />
-                    );
-                  })
+                  notes.map(noteRow)
                 ) : (
                   <Row
                     first
@@ -289,5 +324,8 @@ const styles = StyleSheet.create({
   },
   actionLabel: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
   note: { fontSize: 12.5, lineHeight: 18 },
+  gap: { gap: 8 },
+  gapHead: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 24 },
+  gapTitle: { fontSize: 13.5, lineHeight: 19, fontWeight: '600' },
   footnote: { fontSize: 12, lineHeight: 16, marginTop: 4 },
 });
