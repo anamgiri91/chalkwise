@@ -10,6 +10,7 @@ const paths = [
   'scripts/format.mjs',
   'scripts/build-release.mjs',
   'scripts/eval-grounding.mts',
+  'scripts/fit-schedule.mts',
   'server/infra/web-router.js',
   'src/features/study',
   'src/features/courses/matchCourse.ts',
