@@ -2,7 +2,7 @@ import { mockLectures } from '@/features/lectures/mockData';
 import { getDataMode } from '@/lib/dataMode';
 import { apiRequest } from '@/lib/api';
 import { getApiSession } from '@/lib/cognito';
-import type { CreateLectureInput, Lecture } from '@/types';
+import type { CreateLectureInput, Lecture, LectureEdit } from '@/types';
 import { getCourse } from './courses';
 
 type LectureRow = {
@@ -38,6 +38,13 @@ function fromRow(row: LectureRow): Lecture {
 function copy(lecture: Lecture): Lecture {
   return {
     ...lecture,
+    ...(lecture.sources
+      ? {
+          sources: Object.fromEntries(
+            Object.entries(lecture.sources).map(([key, refs]) => [key, [...(refs ?? [])]]),
+          ),
+        }
+      : {}),
     keyConcepts: [...lecture.keyConcepts],
     importantPoints: [...lecture.importantPoints],
     assignments: [...lecture.assignments],
@@ -144,6 +151,21 @@ export async function createLecture(input: CreateLectureInput): Promise<Lecture>
   if (error) throw new Error(`Could not create lecture (attempted ID ${id}): ${error.message}`);
   if (!data) throw new Error(`No saved lecture was returned (attempted ID ${id}).`);
   return fromRow(data);
+}
+
+/**
+ * Save the owner's corrections to generated notes. Originals are never touched, and
+ * the notebook is marked as edited so readers know a person changed it.
+ */
+export async function updateLecture(id: string, edit: LectureEdit): Promise<Lecture> {
+  if (getDataMode() === 'api')
+    return apiRequest(`/lectures/${encodeURIComponent(id)}`, { method: 'PUT', body: edit });
+  if (getDataMode() !== 'mock')
+    throw new Error('Editing notes is available on the new Chalkwise backend.');
+  const index = lectures.findIndex((lecture) => lecture.id === id);
+  if (index < 0) throw new Error('Notebook not found.');
+  lectures[index] = copy({ ...lectures[index], ...edit, editedAt: new Date().toISOString() });
+  return copy(lectures[index]);
 }
 
 /** A friend's lecture, carrying who shared it so the UI can credit them. */

@@ -9,6 +9,7 @@ export const mockLectures: Lecture[] = [
     assignments: ['Practice inserting and deleting nodes in a binary search tree.'],
     examMentions: ['Review tree traversals for the next exam.'],
     createdAt: '2026-09-14T14:00:00.000Z',
+    sources: { keyConcepts: [1, 1, 1], importantPoints: [1, 1], assignments: [2], examMentions: [2] },
   },
   {
     id: 'graph-traversal', courseId: 'cs-3358', title: 'Graph Traversal',

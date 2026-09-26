@@ -213,8 +213,15 @@ export default function ProcessingScreen() {
 
         setStage('saving');
         if (!savedLectureId.current) {
-          const { title, summary, keyConcepts, importantPoints, assignments, examMentions } =
-            analysis.current;
+          const {
+            title,
+            summary,
+            keyConcepts,
+            importantPoints,
+            assignments,
+            examMentions,
+            sources,
+          } = analysis.current;
           const lecture = await createLecture({
             courseId: course.current.id,
             title,
@@ -223,6 +230,7 @@ export default function ProcessingScreen() {
             importantPoints,
             assignments,
             examMentions,
+            ...(sources ? { sources } : {}),
           });
           savedLectureId.current = lecture.id;
         }
