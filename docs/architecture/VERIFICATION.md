@@ -43,3 +43,39 @@ This is an implemented small-pilot foundation with automated regression checks, 
 The current processing flow handles one photo. Multi-photo processing, durable capture recovery after process termination, background notifications and hardware pairing are deferred. AI output is validated structurally and prompted to stay within the source; model accuracy still needs evaluation against representative student material.
 
 Complete the live isolation test, cloud acceptance, dependency review, backup/restore rehearsal and physical-device checklist before inviting real users onto the new backend.
+
+## Study features (September 2026)
+
+Reminders, editable notes linked to photos, class-time filing, weekly catch-up and saved
+quizzes.
+
+Verified in this environment:
+
+- `npm run check`: typecheck of app and server, 65 app and 49 server tests, formatting.
+- Database tests against disposable local PostgreSQL 16 with migrations 001–003 and
+  the restricted runtime login. They cover owner-only class times, note edits and quiz
+  attempts, and repository round-trips for sources, edits, class times and attempts.
+- Web demo in Chromium at phone and desktop width, light and dark: note-to-photo chips,
+  the photo viewer, editing and saving notes, the class-times editor with loosely typed
+  times, the Overview catch-up card, CatchUp "This week", copying a classmate note, the
+  Profile reminders setting, and the Overview today line. No console errors, except the
+  known hydration warning below.
+- Planner, schedule and catch-up logic tested in UTC, America/Chicago and Asia/Kolkata.
+
+Still needs manual verification:
+
+- **Reminders on a device.** Permission prompt, delivery at the planned time, the
+  Android channel, and tapping a reminder while the app is closed or open. The web build
+  has no scheduled notifications. A native build is needed because `app.json` gained
+  the `expo-notifications` plugin.
+- **Quiz history and quiz-to-review** against the live API with Gemini. Mock mode
+  deliberately cannot generate quizzes, so this path is covered by API and unit tests
+  only.
+- **Note sources from real captures.** The matcher is unit-tested on sample
+  transcripts; check the photo links on a few real multi-photo sessions.
+- **Camera "in class now" label** on a device during a scheduled class.
+
+Known, pre-existing: the static web export logs React hydration error #418 on the
+Overview at desktop widths. It also occurs on the code before this work (checked at
+`7ff3c8d`). The likely cause is the shell choosing its layout from the window width,
+which differs between prerender and the browser.
