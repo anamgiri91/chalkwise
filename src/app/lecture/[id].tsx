@@ -455,7 +455,7 @@ export default function LectureNotebookScreen() {
             </Block>
             <Block first={false}>
               <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-                Confidence
+                How well did you remember it?
               </ThemedText>
               <View style={styles.choices}>
                 {reviewOptions.map((option) => {
@@ -577,8 +577,8 @@ export default function LectureNotebookScreen() {
                 tone={lecture.editedAt ? 'neutral' : 'generated'}
                 caption={
                   lecture.editedAt
-                    ? `Written by Chalkwise, corrected ${dateOf(lecture.editedAt)}. Tap Photo to see where a line came from.`
-                    : 'Written by Chalkwise from the originals. Tap Photo to check a line against its source.'
+                    ? `Written by Chalkwise, corrected ${dateOf(lecture.editedAt)}. Open Photo on a line to see where it came from.`
+                    : 'Written by Chalkwise from the originals. Open Photo on a line to check it against its source.'
                 }
                 action={
                   canEdit && !editing ? (

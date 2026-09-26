@@ -12,6 +12,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { getStudyDashboard, getWorkspaceCapabilities } from '@/services/study';
 import { getInitials } from '@/features/profile/initials';
 import { getCatchupFeed, type CatchupGap } from '@/services/catchup';
+import { getMeetings } from '@/services/schedule';
+import { formatClock, nextMeeting, WEEKDAYS } from '@/features/courses/schedule';
+import type { CourseMeeting } from '@/types';
 import {
   getReminderStatus,
   syncReviewReminders,
@@ -34,6 +37,7 @@ export default function HomeScreen() {
   const [reminders, setReminders] = useState<ReminderStatus>('unsupported');
   const [reminderBusy, setReminderBusy] = useState(false);
   const [gap, setGap] = useState<CatchupGap | null>(null);
+  const [meetings, setMeetings] = useState<CourseMeeting[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -59,6 +63,11 @@ export default function HomeScreen() {
         .finally(() => {
           if (active) setLoading(false);
         });
+      void getMeetings()
+        .then((value) => {
+          if (active) setMeetings(value);
+        })
+        .catch(() => {});
       void getReminderStatus()
         .then((status) => {
           if (active) setReminders(status);
@@ -90,11 +99,28 @@ export default function HomeScreen() {
     ) ?? [];
   const due = data?.queue ?? [];
   const open = (id: string) => router.push({ pathname: '/lecture/[id]', params: { id } });
+  // One line that answers "what now?": reviews waiting and the next class.
+  const upcoming = nextMeeting(meetings, new Date());
+  const today = data
+    ? [
+        due.length ? plural(due.length, 'review') + ' due' : 'All caught up on reviews',
+        upcoming
+          ? `Next class: ${courseFor(upcoming.meeting.courseId)?.code ?? 'class'}, ${
+              upcoming.startsAt.toDateString() === new Date().toDateString()
+                ? 'today'
+                : WEEKDAYS[upcoming.meeting.weekday]
+            } ${formatClock(upcoming.meeting.start)}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : undefined;
 
   return (
     <Screen showBottomNav wide>
       <Toolbar
         title="Overview"
+        description={today}
         actions={
           <>
             <WorkspaceButton
