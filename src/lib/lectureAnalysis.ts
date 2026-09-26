@@ -1,4 +1,51 @@
-import type { LectureAnalysis } from '../features/lectures/types.ts';
+import type { LectureAnalysis, NoteListKey, NoteSources } from '../features/lectures/types.ts';
+
+export const NOTE_LISTS: readonly NoteListKey[] = [
+  'keyConcepts',
+  'importantPoints',
+  'assignments',
+  'examMentions',
+];
+/** Photo numbers are 1-based and a capture session holds at most six photos. */
+const MAX_PHOTO = 6;
+
+const photoNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_PHOTO
+    ? value
+    : null;
+
+/**
+ * Validate note lists and their optional sources together, so dropping a blank line
+ * never shifts a source onto the wrong line. Sources whose length does not match
+ * their list are discarded rather than guessed.
+ */
+export function parseNoteLists(
+  row: Record<string, unknown>,
+): Record<NoteListKey, string[]> & { sources?: NoteSources } {
+  const rawSources =
+    row.sources && typeof row.sources === 'object' && !Array.isArray(row.sources)
+      ? (row.sources as Record<string, unknown>)
+      : null;
+  const lists = {} as Record<NoteListKey, string[]>;
+  const sources: NoteSources = {};
+  for (const key of NOTE_LISTS) {
+    const value = row[key];
+    if (!Array.isArray(value) || !value.every((item): item is string => typeof item === 'string'))
+      throw new Error(`Invalid analysis field: ${key}.`);
+    const given = rawSources?.[key];
+    const aligned = Array.isArray(given) && given.length === value.length ? given : null;
+    lists[key] = [];
+    const kept: (number | null)[] = [];
+    value.forEach((item, index) => {
+      const line = item.trim();
+      if (!line) return;
+      lists[key].push(line);
+      if (aligned) kept.push(photoNumber(aligned[index]));
+    });
+    if (aligned) sources[key] = kept;
+  }
+  return Object.keys(sources).length ? { ...lists, sources } : lists;
+}
 
 /** Validate untrusted JSON at both the Edge and mobile service boundaries. */
 export function parseLectureAnalysis(value: unknown): LectureAnalysis {
@@ -11,13 +58,6 @@ export function parseLectureAnalysis(value: unknown): LectureAnalysis {
       throw new Error(`Invalid analysis field: ${key}.`);
     return value.trim();
   };
-  const strings = (key: string): string[] => {
-    const value = row[key];
-    if (!Array.isArray(value) || !value.every((item): item is string => typeof item === 'string')) {
-      throw new Error(`Invalid analysis field: ${key}.`);
-    }
-    return value.map((item) => item.trim()).filter(Boolean);
-  };
   if (row.suggestedCourse !== null && typeof row.suggestedCourse !== 'string') {
     throw new Error('Invalid analysis field: suggestedCourse.');
   }
@@ -26,10 +66,7 @@ export function parseLectureAnalysis(value: unknown): LectureAnalysis {
     title: requiredString('title'),
     topic: requiredString('topic'),
     summary: requiredString('summary'),
-    keyConcepts: strings('keyConcepts'),
-    importantPoints: strings('importantPoints'),
-    assignments: strings('assignments'),
-    examMentions: strings('examMentions'),
+    ...parseNoteLists(row),
   };
 }
 
@@ -45,9 +82,11 @@ export function parseLectureOrganization(value: unknown): LectureOrganization {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Invalid lecture organization.');
   }
+  // Sources are computed from the transcripts, never taken from the organizer.
   const analysis = parseLectureAnalysis({
     ...(value as Record<string, unknown>),
     suggestedCourse: null,
+    sources: undefined,
   });
   return {
     title: analysis.title,

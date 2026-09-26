@@ -7,10 +7,21 @@ import { ApiError, found } from './errors.ts';
 import { nextReviewAt } from '../../src/features/study/schedule.ts';
 import type { ReviewConfidence } from '../../src/features/study/schedule.ts';
 import type { z } from 'zod';
-import type { courseInput, lectureInput, profileInput, uploadInput } from './validation.ts';
+import type {
+  attemptInput,
+  courseInput,
+  lectureEditInput,
+  lectureInput,
+  meetingsInput,
+  profileInput,
+  uploadInput,
+} from './validation.ts';
 
 const lectureColumns = `id, course_id AS "courseId", title, summary, key_concepts AS "keyConcepts",
-  important_points AS "importantPoints", assignments, exam_mentions AS "examMentions", created_at AS "createdAt"`;
+  important_points AS "importantPoints", assignments, exam_mentions AS "examMentions", created_at AS "createdAt",
+  note_sources AS "sources", edited_at AS "editedAt"`;
+const meetingColumns = `course_id AS "courseId", weekday, to_char(starts_at,'HH24:MI') AS start, to_char(ends_at,'HH24:MI') AS "end"`;
+const attemptColumns = `id, lecture_id AS "lectureId", attempted_at AS "attemptedAt", score, total, missed`;
 const materialColumns = `id, lecture_id AS "lectureId", 'photo' AS type, storage_path AS "filePath"`;
 const reviewColumns = `lecture_id AS "lectureId", confidence, reviewed_at AS "reviewedAt", next_review_at AS "nextReviewAt"`;
 const one = async (db: PoolClient, sql: string, values: unknown[] = []) =>
@@ -100,8 +111,8 @@ export function repository(database: Database, storage: Storage) {
     createLecture: (user: string, id: string, input: z.infer<typeof lectureInput>) =>
       run(user, async (db) => {
         await db.query(
-          `INSERT INTO chalkwise.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING`,
+          `INSERT INTO chalkwise.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions,note_sources)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO NOTHING`,
           [
             id,
             user,
@@ -112,6 +123,7 @@ export function repository(database: Database, storage: Storage) {
             input.importantPoints,
             input.assignments,
             input.examMentions,
+            input.sources ?? {},
           ],
         );
         const saved = found(
@@ -121,11 +133,15 @@ export function repository(database: Database, storage: Storage) {
             [id, user],
           ),
         );
+        // Sources are derived metadata stored as jsonb, which reorders keys; the notes
+        // themselves are what a reused save key must not change.
         if (
-          Object.keys(input).some(
-            (key) =>
-              JSON.stringify(saved[key]) !== JSON.stringify(input[key as keyof typeof input]),
-          )
+          Object.keys(input)
+            .filter((key) => key !== 'sources')
+            .some(
+              (key) =>
+                JSON.stringify(saved[key]) !== JSON.stringify(input[key as keyof typeof input]),
+            )
         ) {
           throw new ApiError(
             409,
@@ -152,6 +168,85 @@ export function repository(database: Database, storage: Storage) {
           ),
         ),
       ),
+    editLecture: (user: string, id: string, input: z.infer<typeof lectureEditInput>) =>
+      run(user, async (db) =>
+        found(
+          await one(
+            db,
+            `UPDATE chalkwise.lectures SET title=$3,summary=$4,key_concepts=$5,important_points=$6,
+             assignments=$7,exam_mentions=$8,note_sources=$9,edited_at=now()
+             WHERE id=$1 AND owner_id=$2 RETURNING ${lectureColumns}`,
+            [
+              id,
+              user,
+              input.title,
+              input.summary,
+              input.keyConcepts,
+              input.importantPoints,
+              input.assignments,
+              input.examMentions,
+              input.sources ?? {},
+            ],
+          ),
+        ),
+      ),
+    meetings: (user: string) =>
+      run(user, (db) =>
+        many(
+          db,
+          `SELECT ${meetingColumns} FROM chalkwise.course_meetings WHERE user_id=$1 ORDER BY weekday,starts_at,course_id`,
+          [user],
+        ),
+      ),
+    setMeetings: (user: string, courseId: string, input: z.infer<typeof meetingsInput>) =>
+      run(user, async (db) => {
+        found(
+          await one(
+            db,
+            'SELECT 1 FROM chalkwise.course_memberships WHERE user_id=$1 AND course_id=$2',
+            [user, courseId],
+          ),
+        );
+        await db.query('DELETE FROM chalkwise.course_meetings WHERE user_id=$1 AND course_id=$2', [
+          user,
+          courseId,
+        ]);
+        for (const meeting of input.meetings) {
+          await db.query(
+            `INSERT INTO chalkwise.course_meetings(user_id,course_id,weekday,starts_at,ends_at)
+             VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+            [user, courseId, meeting.weekday, meeting.start, meeting.end],
+          );
+        }
+        return many(
+          db,
+          `SELECT ${meetingColumns} FROM chalkwise.course_meetings WHERE user_id=$1 AND course_id=$2 ORDER BY weekday,starts_at`,
+          [user, courseId],
+        );
+      }),
+    quizAttempts: (user: string, lectureId: string) =>
+      run(user, (db) =>
+        many(
+          db,
+          `SELECT ${attemptColumns} FROM chalkwise.quiz_attempts WHERE user_id=$1 AND lecture_id=$2 ORDER BY attempted_at DESC LIMIT 20`,
+          [user, lectureId],
+        ),
+      ),
+    recordQuizAttempt: (user: string, lectureId: string, input: z.infer<typeof attemptInput>) =>
+      run(user, async (db) => {
+        found(
+          await one(db, 'SELECT id FROM chalkwise.lectures WHERE id=$1 AND owner_id=$2', [
+            lectureId,
+            user,
+          ]),
+        );
+        return one(
+          db,
+          `INSERT INTO chalkwise.quiz_attempts(user_id,lecture_id,score,total,missed)
+           VALUES($1,$2,$3,$4,$5) RETURNING ${attemptColumns}`,
+          [user, lectureId, input.score, input.total, JSON.stringify(input.missed)],
+        );
+      }),
     sharedLectures: (user: string, owners: string[]) =>
       run(user, (db) =>
         many(
@@ -374,8 +469,8 @@ export function repository(database: Database, storage: Storage) {
           ]),
         );
         await db.query(
-          `INSERT INTO chalkwise.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions,source_lecture_id)
-          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT DO NOTHING`,
+          `INSERT INTO chalkwise.lectures(id,owner_id,course_id,title,summary,key_concepts,important_points,assignments,exam_mentions,source_lecture_id,note_sources)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT DO NOTHING`,
           [
             targetId,
             user,
@@ -387,14 +482,25 @@ export function repository(database: Database, storage: Storage) {
             l.assignments,
             l.exam_mentions,
             sourceId,
+            l.note_sources ?? {},
           ],
         );
         for (const p of source.photos) {
           const id = stableUuid(`${targetId}:${p.id}`);
           await db.query(
-            `INSERT INTO chalkwise.materials(id,owner_id,lecture_id,storage_path,mime_type,byte_size,sha256,status)
-            VALUES($1,$2,$3,$4,$5,$6,$7,'ready') ON CONFLICT DO NOTHING`,
-            [id, user, targetId, `${user}/${id}/original`, p.mime_type, p.byte_size, p.sha256],
+            // Keep the original capture order: note sources refer to photos by position.
+            `INSERT INTO chalkwise.materials(id,owner_id,lecture_id,storage_path,mime_type,byte_size,sha256,status,created_at)
+            VALUES($1,$2,$3,$4,$5,$6,$7,'ready',$8) ON CONFLICT DO NOTHING`,
+            [
+              id,
+              user,
+              targetId,
+              `${user}/${id}/original`,
+              p.mime_type,
+              p.byte_size,
+              p.sha256,
+              p.created_at,
+            ],
           );
         }
         return found(

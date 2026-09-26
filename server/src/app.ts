@@ -10,9 +10,12 @@ import { analyzeSession } from './analysis.ts';
 import { ApiError } from './errors.ts';
 import {
   analyzeInput,
+  attemptInput,
   courseInput,
   id,
+  lectureEditInput,
   lectureInput,
+  meetingsInput,
   profileInput,
   reviewInput,
   uploadInput,
@@ -172,6 +175,23 @@ export async function buildApp(deps: {
           .code(201)
           .send(await repo.createLecture(r.userId, key, lectureInput.parse(r.body)));
       });
+      api.put('/lectures/:id', async (r) =>
+        repo.editLecture(r.userId, param(r.params), lectureEditInput.parse(r.body)),
+      );
+      api.get('/meetings', async (r) => repo.meetings(r.userId));
+      api.put('/courses/:id/meetings', async (r) =>
+        repo.setMeetings(r.userId, param(r.params), meetingsInput.parse(r.body)),
+      );
+      api.get('/lectures/:id/quiz-attempts', async (r) =>
+        repo.quizAttempts(r.userId, param(r.params)),
+      );
+      api.post('/lectures/:id/quiz-attempts', async (r, reply) =>
+        reply
+          .code(201)
+          .send(
+            await repo.recordQuizAttempt(r.userId, param(r.params), attemptInput.parse(r.body)),
+          ),
+      );
       api.get('/lectures/:id/sharing', async (r) => repo.sharing(r.userId, param(r.params)));
       api.put('/lectures/:id/sharing', async (r) =>
         repo.setSharing(

@@ -89,6 +89,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f server/infra/runtime-role.sql
           psql -v ON_ERROR_STOP=1 -f server/migrations/001_initial.sql
           psql -v ON_ERROR_STOP=1 -f server/migrations/002_review_events.sql
+          psql -v ON_ERROR_STOP=1 -f server/migrations/003_study_features.sql
           psql -v ON_ERROR_STOP=1 -c "CREATE ROLE chalkwise_runtime LOGIN PASSWORD 'local-test-only' NOSUPERUSER NOBYPASSRLS; GRANT chalkwise_app TO chalkwise_runtime;"
       - name: Verify row-level access using the non-owner runtime login
         run: npm run test:db --prefix server
