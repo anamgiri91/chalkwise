@@ -23,6 +23,9 @@ import {
   type PhotoQualityWarning,
 } from '@/features/capture/captureSession';
 import { checkPhotoQuality } from '@/features/capture/photoQuality';
+import { courseInSession } from '@/features/courses/schedule';
+import { getMyEnrolledCourses } from '@/services/enrollment';
+import { getMeetings } from '@/services/schedule';
 
 function photoFromCamera(picture: CameraCapturedPicture, sequence: number): CaptureSessionPhoto {
   const capturedAt = new Date().toISOString();
@@ -76,6 +79,22 @@ export default function CaptureScreen() {
   const [cameraError, setCameraError] = useState('');
   const [cameraKey, setCameraKey] = useState(0);
   const [finishing, setFinishing] = useState(false);
+  const [classNow, setClassNow] = useState<string | null>(null);
+
+  // Name the class in session, so the student knows where these photos will be filed.
+  useEffect(() => {
+    let active = true;
+    Promise.all([getMeetings(), getMyEnrolledCourses()])
+      .then(([meetings, courses]) => {
+        const id = courseInSession(meetings, new Date(sessionCreatedAt.current));
+        const course = courses.find((candidate) => candidate.id === id);
+        if (active && course) setClassNow(course.code);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => () => {
     warningTimers.current.forEach(clearTimeout);
@@ -251,6 +270,7 @@ export default function CaptureScreen() {
           <View>
             <ThemedText style={styles.eyebrow}>RAPID CAPTURE</ThemedText>
             <ThemedText style={styles.counter}>{photos.length} / {MAX_CAPTURE_PHOTOS} photos</ThemedText>
+            {classNow ? <ThemedText style={styles.classNow}>Filing under {classNow} · in class now</ThemedText> : null}
           </View>
           <Pressable
             accessibilityRole="button"
@@ -412,6 +432,7 @@ const styles = StyleSheet.create({
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18 },
   eyebrow: { color: Brand.lime, fontSize: 10, lineHeight: 14, fontWeight: '800', letterSpacing: 1.4 },
   counter: { color: '#FFFFFF', fontSize: 18, lineHeight: 24, fontWeight: '700' },
+  classNow: { color: 'rgba(255,255,255,0.86)', fontSize: 12.5, lineHeight: 18, fontWeight: '600', marginTop: 2 },
   done: { minHeight: 46, minWidth: 82, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: Brand.lime },
   doneText: { color: Brand.ink, fontWeight: '800' },
   guide: { position: 'absolute', top: 90, left: 24, right: 24, bottom: 245 },

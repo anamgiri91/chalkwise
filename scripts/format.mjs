@@ -17,6 +17,8 @@ const paths = [
   'src/features/lectures/editNotes.ts',
   'src/components/NotesEditor.tsx',
   'src/components/PhotoViewer.tsx',
+  'src/components/ClassTimesEditor.tsx',
+  'src/features/courses/schedule.ts',
   'src/lib/api.ts',
   'src/lib/captureExtraction.ts',
   'src/lib/grounding.ts',

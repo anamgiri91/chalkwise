@@ -12,12 +12,17 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getCourse } from '@/services/courses';
 import { getLectures } from '@/services/lectures';
-import type { Course, Lecture } from '@/types';
+import { getMeetings, scheduleAvailable, setCourseMeetings } from '@/services/schedule';
+import { ClassTimesEditor } from '@/components/ClassTimesEditor';
+import { describeMeetings, groupMeetings } from '@/features/courses/schedule';
+import type { Course, CourseMeeting, Lecture } from '@/types';
 
 export default function CourseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const [data, setData] = useState<{ course: Course | null; lectures: Lecture[] } | null>(null);
+  const [meetings, setMeetings] = useState<CourseMeeting[]>([]);
+  const [editingTimes, setEditingTimes] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -27,9 +32,12 @@ export default function CourseScreen() {
       let active = true;
       setLoading(true);
       setError(false);
-      Promise.all([getCourse(id), getLectures(id)])
-        .then(([course, lectures]) => {
-          if (active) setData({ course, lectures });
+      setEditingTimes(false);
+      Promise.all([getCourse(id), getLectures(id), getMeetings().catch(() => [])])
+        .then(([course, lectures, all]) => {
+          if (!active) return;
+          setData({ course, lectures });
+          setMeetings(all.filter((meeting) => meeting.courseId === id));
         })
         .catch(() => {
           if (active) setError(true);
@@ -93,6 +101,46 @@ export default function CourseScreen() {
       <ThemedText style={[styles.meta, { color: theme.textSecondary }]}>
         {[course.code, course.professor].filter(Boolean).join(' · ')}
       </ThemedText>
+
+      {scheduleAvailable() ? (
+        <Section
+          label="Class times"
+          action={editingTimes ? undefined : meetings.length ? 'Edit' : undefined}
+          onAction={() => setEditingTimes(true)}
+        >
+          {editingTimes ? (
+            <ClassTimesEditor
+              initial={groupMeetings(meetings)}
+              onCancel={() => setEditingTimes(false)}
+              onSave={async (next) => {
+                setMeetings(await setCourseMeetings(id, next));
+                setEditingTimes(false);
+              }}
+            />
+          ) : (
+            <RowGroup>
+              {meetings.length ? (
+                describeMeetings(meetings).map((line, index) => (
+                  <Row
+                    key={line}
+                    first={index === 0}
+                    title={line}
+                    leading={<AppIcon name="clock" size={15} color={theme.textSecondary} />}
+                  />
+                ))
+              ) : (
+                <Row
+                  first
+                  title="Add when this class meets"
+                  meta={['Photos taken in class file here automatically']}
+                  leading={<AppIcon name="clock" size={15} color={theme.accent} />}
+                  onPress={() => setEditingTimes(true)}
+                />
+              )}
+            </RowGroup>
+          )}
+        </Section>
+      ) : null}
 
       <Section label="Notebooks" count={data.lectures.length}>
         <RowGroup>
