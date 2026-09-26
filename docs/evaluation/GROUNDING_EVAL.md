@@ -31,7 +31,7 @@ could act on it as written) or **unsupported** (it would mislead them), with a c
 | dev | 10 | 45 | 51 |
 | holdout | 6 | 24 | 36 |
 
-The dataset was committed on its own (commit `23987a0`) before the candidate verifier
+The dataset was committed on its own (commit `766999f`) before the candidate verifier
 was written, and the verifier was designed and tuned only against the dev split. The
 holdout split was scored once, after the design was frozen.
 
