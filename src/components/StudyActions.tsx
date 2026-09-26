@@ -1,16 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { askLecture, generateQuiz } from '@/services/ai';
-import type { GenerateQuizResult } from '@/types';
+import { getQuizAttempts, quizHistoryAvailable, recordQuizAttempt } from '@/services/quizzes';
+import { recordReview } from '@/services/study';
+import { refreshReviewReminders } from '@/services/reminders';
+import { confidenceFromQuiz, describeQuizReview } from '@/features/study/quizReview';
+import type { GenerateQuizResult, LectureReview, QuizAttempt, QuizQuestion } from '@/types';
 import { ThemedText } from './themed-text';
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
 }
 
-export function StudyActions({ lectureId }: { lectureId: string }) {
+export function StudyActions({
+  lectureId,
+  owner = false,
+  onReviewed,
+}: {
+  lectureId: string;
+  /** Owners' quizzes are saved and count as reviews; readers of shared notes just practise. */
+  owner?: boolean;
+  onReviewed?: (review: LectureReview) => void;
+}) {
   const theme = useTheme();
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -21,6 +34,25 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
   const [finished, setFinished] = useState(false);
   const [busy, setBusy] = useState<'ask' | 'quiz' | null>(null);
   const [error, setError] = useState('');
+  const [missed, setMissed] = useState<QuizQuestion[]>([]);
+  /** A retry of missed questions is practice: it is not saved and not a review. */
+  const [retrying, setRetrying] = useState(false);
+  const [outcome, setOutcome] = useState('');
+  const [history, setHistory] = useState<QuizAttempt[]>([]);
+  const tracked = owner && quizHistoryAvailable();
+
+  useEffect(() => {
+    if (!tracked) return;
+    let active = true;
+    getQuizAttempts(lectureId)
+      .then((attempts) => {
+        if (active) setHistory(attempts);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [lectureId, tracked]);
 
   /** Replay the questions already in state; never re-requests from Gemini. */
   function restart() {
@@ -28,6 +60,34 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
     setSelected(null);
     setScore(0);
     setFinished(false);
+    setMissed([]);
+    setOutcome('');
+  }
+
+  /** Practise only the questions answered wrong, from this quiz or a saved attempt. */
+  function retry(questions: QuizQuestion[], title: string) {
+    if (!questions.length) return;
+    setQuiz({ title: `${title} · missed questions`, questions });
+    setRetrying(true);
+    restart();
+  }
+
+  async function finishFullQuiz(total: number, finalScore: number, wrong: QuizQuestion[]) {
+    if (!tracked) return;
+    try {
+      const attempt = await recordQuizAttempt(lectureId, {
+        score: finalScore,
+        total,
+        missed: wrong,
+      });
+      setHistory((value) => [attempt, ...value]);
+      const confidence = confidenceFromQuiz(finalScore, total);
+      onReviewed?.(await recordReview(lectureId, confidence));
+      setOutcome(describeQuizReview(confidence));
+      void refreshReviewReminders().catch(() => {});
+    } catch (caught) {
+      setOutcome(`Your score was not saved: ${message(caught)}`);
+    }
   }
 
   async function ask() {
@@ -54,6 +114,7 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
     try {
       const result = await generateQuiz(lectureId);
       setQuiz(result);
+      setRetrying(false);
       restart();
     } catch (caught) {
       setError(message(caught));
@@ -62,17 +123,19 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
     }
   }
 
-  function choose(option: string, correctAnswer: string) {
+  function choose(option: string, item: QuizQuestion) {
     // Answers lock on first tap, so the score can never be inflated.
     if (selected !== null) return;
     setSelected(option);
-    if (option === correctAnswer) setScore((value) => value + 1);
+    if (option === item.correctAnswer) setScore((value) => value + 1);
+    else setMissed((value) => [...value, item]);
   }
 
   function advance() {
     if (!quiz || selected === null) return;
     if (index + 1 >= quiz.questions.length) {
       setFinished(true);
+      if (!retrying) void finishFullQuiz(quiz.questions.length, score, missed);
       return;
     }
     setIndex((value) => value + 1);
@@ -147,11 +210,28 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
 
       <View style={styles.block}>
         <ThemedText style={[styles.label, { color: theme.textSecondary }]}>Quiz</ThemedText>
+        {!quiz && history[0] ? (
+          <ThemedText style={[styles.meta, { color: theme.textSecondary }]}>
+            Last quiz: {history[0].score} of {history[0].total} correct ·{' '}
+            {new Date(history[0].attemptedAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </ThemedText>
+        ) : null}
         {quiz ? null : (
           <View style={styles.actions}>
             {action(busy === 'quiz' ? 'Generating…' : 'Generate quiz', makeQuiz, {
+              primary: !history[0]?.missed.length,
               disabled: busy !== null,
             })}
+            {history[0]?.missed.length
+              ? action(
+                  `Retry ${history[0].missed.length} missed`,
+                  () => retry(history[0].missed, 'Last quiz'),
+                  { primary: true, disabled: busy !== null },
+                )
+              : null}
             {busy === 'quiz' ? (
               <ActivityIndicator
                 color={theme.textSecondary}
@@ -209,7 +289,7 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
                         accessibilityLabel={option}
                         accessibilityState={{ selected: chosen, disabled: answered }}
                         disabled={answered}
-                        onPress={() => choose(option, item.correctAnswer)}
+                        onPress={() => choose(option, item)}
                         style={({ pressed, hovered }) => [
                           styles.option,
                           { borderColor: theme.border },
@@ -258,10 +338,47 @@ export function StudyActions({ lectureId }: { lectureId: string }) {
             <ThemedText accessibilityLiveRegion="polite" style={styles.score}>
               {score} / {quiz.questions.length} correct
             </ThemedText>
+            {outcome ? (
+              <ThemedText
+                accessibilityLiveRegion="polite"
+                style={[styles.text, { color: theme.textSecondary }]}
+              >
+                {outcome}
+              </ThemedText>
+            ) : retrying ? (
+              <ThemedText style={[styles.text, { color: theme.textSecondary }]}>
+                Practice round. It does not change your review schedule.
+              </ThemedText>
+            ) : null}
+            {missed.length ? (
+              <View style={styles.missedList}>
+                <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+                  To go over
+                </ThemedText>
+                {missed.map((item) => (
+                  <View key={item.question} style={[styles.missed, { borderColor: theme.border }]}>
+                    <ThemedText style={styles.text}>{item.question}</ThemedText>
+                    <ThemedText style={[styles.meta, { color: theme.success }]}>
+                      Answer: {item.correctAnswer}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            ) : null}
             <View style={styles.actions}>
-              {action('Retake', restart)}
+              {missed.length
+                ? action(`Retry the ${missed.length} you missed`, () => retry(missed, quiz.title), {
+                    primary: true,
+                  })
+                : null}
+              {action('Retake all', () => {
+                // Answers are fresh in mind, so a retake is practice, not a review.
+                setRetrying(true);
+                restart();
+              })}
               {action('Close', () => {
                 setQuiz(null);
+                setRetrying(false);
                 restart();
               })}
             </View>
@@ -322,4 +439,6 @@ const styles = StyleSheet.create({
   },
   verdict: { fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
   score: { fontSize: 19, lineHeight: 26, fontWeight: '600' },
+  missedList: { gap: 6 },
+  missed: { borderWidth: 1, borderRadius: Radius.medium, padding: 10, gap: 4 },
 });

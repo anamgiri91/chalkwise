@@ -614,7 +614,7 @@ export default function LectureNotebookScreen() {
 
           <Section label="Ask and quiz">
             {capabilities.liveAI ? (
-              <StudyActions key={id} lectureId={id} />
+              <StudyActions key={id} lectureId={id} owner={canReview} onReviewed={setReview} />
             ) : (
               <RowGroup>
                 <Block>

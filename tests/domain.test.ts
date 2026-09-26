@@ -115,3 +115,14 @@ test('quizzes reject ambiguous answer keys, repeated questions and repeated choi
   options.questions[0].options = ['A', 'A', 'B', 'C'];
   assert.throws(() => parseQuizResult(options));
 });
+
+test('a finished quiz counts as a review by how much was recalled', async () => {
+  const { confidenceFromQuiz } = await import('../src/features/study/quizReview.ts');
+  assert.equal(confidenceFromQuiz(5, 5), 'easy');
+  assert.equal(confidenceFromQuiz(4, 5), 'good');
+  assert.equal(confidenceFromQuiz(3, 5), 'good');
+  assert.equal(confidenceFromQuiz(2, 5), 'again');
+  assert.equal(confidenceFromQuiz(0, 5), 'again');
+  assert.throws(() => confidenceFromQuiz(6, 5));
+  assert.throws(() => confidenceFromQuiz(0, 0));
+});
