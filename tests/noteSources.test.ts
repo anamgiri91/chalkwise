@@ -48,3 +48,22 @@ test('each note line links to the photo whose transcript contains it', () => {
   assert.equal(sourcePhotoOf('HW 5 due Friday', transcripts), null);
   assert.equal(sourcePhotoOf('Dynamic programming', transcripts), null);
 });
+
+test('editing keeps each line on its photo and drops blank lines with their source', async () => {
+  const { toEdit } = await import('../src/features/lectures/editNotes.ts');
+  const edit = toEdit('  Trees ', ' Summary ', {
+    keyConcepts: [
+      { text: 'Binary search tree', source: 1 },
+      { text: '   ', source: 2 },
+      { text: 'New line', source: null },
+    ],
+    importantPoints: [],
+    assignments: [{ text: 'HW 4 due Friday ', source: 2 }],
+    examMentions: [],
+  });
+  assert.equal(edit.title, 'Trees');
+  assert.deepEqual(edit.keyConcepts, ['Binary search tree', 'New line']);
+  assert.deepEqual(edit.sources?.keyConcepts, [1, null]);
+  assert.deepEqual(edit.assignments, ['HW 4 due Friday']);
+  assert.deepEqual(edit.sources?.assignments, [2]);
+});

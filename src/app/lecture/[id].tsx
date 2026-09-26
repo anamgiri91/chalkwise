@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -9,9 +9,11 @@ import { BackButton } from '@/components/ui/BackButton';
 import { RowGroup, Section, Toolbar } from '@/components/ui/DataRow';
 import { SkeletonPage } from '@/components/ui/Skeleton';
 import { StudyActions } from '@/components/StudyActions';
+import { NotesEditor } from '@/components/NotesEditor';
+import { PhotoViewer } from '@/components/PhotoViewer';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { getLecture } from '@/services/lectures';
+import { getLecture, updateLecture } from '@/services/lectures';
 import { getCourse } from '@/services/courses';
 import { getMaterialUrl, getMaterials } from '@/services/materials';
 import {
@@ -23,7 +25,15 @@ import {
 } from '@/services/study';
 import { buildReviewQueue } from '@/features/study/queue';
 import { refreshReviewReminders } from '@/services/reminders';
-import type { Course, Lecture, LectureReview, LectureSharing, ReviewConfidence } from '@/types';
+import type {
+  Course,
+  Lecture,
+  LectureEdit,
+  LectureReview,
+  LectureSharing,
+  NoteListKey,
+  ReviewConfidence,
+} from '@/types';
 
 /**
  * A notebook is two parallel documents: the photos the student captured and the
@@ -72,12 +82,14 @@ function ColumnHead({
   tag,
   tone,
   caption,
+  action,
 }: {
   label: string;
   count?: number;
   tag: string;
   tone?: 'neutral' | 'generated';
   caption?: string;
+  action?: ReactNode;
 }) {
   const theme = useTheme();
   return (
@@ -90,6 +102,7 @@ function ColumnHead({
           <ThemedText style={[styles.count, { color: theme.textSecondary }]}>{count}</ThemedText>
         ) : null}
         <Tag label={tag} tone={tone} />
+        {action ? <View style={styles.headAction}>{action}</View> : null}
       </View>
       {caption ? (
         <ThemedText style={[styles.caption, { color: theme.textTertiary }]}>{caption}</ThemedText>
@@ -179,7 +192,19 @@ function Notice({
   );
 }
 
-function Lines({ label, lines }: { label: string; lines: string[] }) {
+function Lines({
+  label,
+  lines,
+  sources,
+  photoCount,
+  onOpenSource,
+}: {
+  label: string;
+  lines: string[];
+  sources?: (number | null)[];
+  photoCount: number;
+  onOpenSource: (photo: number, line: string) => void;
+}) {
   const theme = useTheme();
   if (!lines.length) return null;
   return (
@@ -196,7 +221,25 @@ function Lines({ label, lines }: { label: string; lines: string[] }) {
             <ThemedText style={[styles.index, { color: theme.textTertiary }]}>
               {String(index + 1).padStart(2, '0')}
             </ThemedText>
-            <ThemedText style={styles.body}>{line}</ThemedText>
+            <ThemedText style={[styles.body, styles.grow]}>{line}</ThemedText>
+            {sources?.[index] && sources[index]! <= photoCount ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open original photo ${sources[index]} for this line`}
+                onPress={() => onOpenSource(sources[index]!, line)}
+                hitSlop={6}
+                style={({ pressed, hovered }) => [
+                  styles.sourceChip,
+                  { borderColor: theme.border, backgroundColor: theme.background },
+                  (pressed || hovered) && { backgroundColor: theme.backgroundHover },
+                ]}
+              >
+                <AppIcon name="eye" size={13} color={theme.textSecondary} />
+                <ThemedText style={[styles.sourceLabel, { color: theme.textSecondary }]}>
+                  Photo {sources[index]}
+                </ThemedText>
+              </Pressable>
+            ) : null}
           </View>
         ))}
       </RowGroup>
@@ -221,6 +264,8 @@ export default function LectureNotebookScreen() {
   const [review, setReview] = useState<LectureReview | null>(null);
   const [busy, setBusy] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [viewer, setViewer] = useState<{ index: number; context?: string } | null>(null);
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -232,6 +277,8 @@ export default function LectureNotebookScreen() {
       setSharing(null);
       setReview(null);
       setShowNotes(true);
+      setEditing(false);
+      setViewer(null);
       async function load() {
         const note = await getLecture(id);
         if (!active) return;
@@ -311,6 +358,12 @@ export default function LectureNotebookScreen() {
       setBusy(false);
     }
   }
+  async function saveEdit(edit: LectureEdit) {
+    setLecture(await updateLecture(id, edit));
+    setEditing(false);
+    // A renamed notebook should be renamed in its reminders too.
+    void refreshReviewReminders().catch(() => {});
+  }
   const retry = () => setAttempt((x) => x + 1);
   if (loading)
     return (
@@ -352,6 +405,18 @@ export default function LectureNotebookScreen() {
     );
   const canReview =
     capabilities.reviews && (capabilities.mode === 'mock' || sharing?.canEdit === true);
+  const canEdit = capabilities.mode === 'mock' || sharing?.canEdit === true;
+  const openSource = (photo: number, line: string) =>
+    setViewer({ index: photo - 1, context: line });
+  const list = (label: string, key: NoteListKey) => (
+    <Lines
+      label={label}
+      lines={lecture[key]}
+      sources={lecture.sources?.[key]}
+      photoCount={sourceError ? 0 : originals.length}
+      onOpenSource={openSource}
+    />
+  );
   const split = width >= SplitBreakpoint;
   const photos = sourceError
     ? 'Originals unavailable'
@@ -472,12 +537,17 @@ export default function LectureNotebookScreen() {
                         Source {index + 1}
                       </ThemedText>
                       {photo.url ? (
-                        <Image
-                          source={{ uri: photo.url }}
-                          accessibilityLabel={`Original lecture photo ${index + 1}`}
-                          resizeMode="contain"
-                          style={[styles.image, { backgroundColor: theme.backgroundHover }]}
-                        />
+                        <Pressable
+                          accessibilityRole="imagebutton"
+                          accessibilityLabel={`Original lecture photo ${index + 1}. Opens full screen.`}
+                          onPress={() => setViewer({ index })}
+                        >
+                          <Image
+                            source={{ uri: photo.url }}
+                            resizeMode="contain"
+                            style={[styles.image, { backgroundColor: theme.backgroundHover }]}
+                          />
+                        </Pressable>
                       ) : (
                         <ThemedText style={[styles.body, { color: theme.textSecondary }]}>
                           Temporarily unavailable. Refresh to request a new link.
@@ -491,7 +561,7 @@ export default function LectureNotebookScreen() {
                   <Block>
                     <ThemedText style={[styles.body, { color: theme.textSecondary }]}>
                       {capabilities.mode === 'mock'
-                        ? 'This sample notebook has no uploaded originals.'
+                        ? 'This sample notebook has no photos. Open Binary Search Trees to see originals.'
                         : 'No original photos are attached to this notebook.'}
                     </ThemedText>
                   </Block>
@@ -502,19 +572,42 @@ export default function LectureNotebookScreen() {
             <View style={[styles.column, split && styles.notesColumn]}>
               <ColumnHead
                 label="Notes"
-                tag="Generated"
-                tone="generated"
-                caption="Written by Chalkwise from the originals. Check details against them."
+                tag={lecture.editedAt ? 'Edited' : 'Generated'}
+                tone={lecture.editedAt ? 'neutral' : 'generated'}
+                caption={
+                  lecture.editedAt
+                    ? `Written by Chalkwise, corrected ${dateOf(lecture.editedAt)}. Tap Photo to see where a line came from.`
+                    : 'Written by Chalkwise from the originals. Tap Photo to check a line against its source.'
+                }
+                action={
+                  canEdit && !editing ? (
+                    <Ghost
+                      label="Edit"
+                      accessibilityHint="Correct anything Chalkwise misread"
+                      onPress={() => setEditing(true)}
+                    />
+                  ) : null
+                }
               />
-              <RowGroup>
-                <Block>
-                  <ThemedText style={styles.body}>{lecture.summary}</ThemedText>
-                </Block>
-              </RowGroup>
-              <Lines label="Key concepts" lines={lecture.keyConcepts} />
-              <Lines label="Important points" lines={lecture.importantPoints} />
-              <Lines label="Assignments" lines={lecture.assignments} />
-              <Lines label="Exam mentions" lines={lecture.examMentions} />
+              {editing ? (
+                <NotesEditor
+                  lecture={lecture}
+                  onCancel={() => setEditing(false)}
+                  onSave={saveEdit}
+                />
+              ) : (
+                <>
+                  <RowGroup>
+                    <Block>
+                      <ThemedText style={styles.body}>{lecture.summary}</ThemedText>
+                    </Block>
+                  </RowGroup>
+                  {list('Key concepts', 'keyConcepts')}
+                  {list('Important points', 'importantPoints')}
+                  {list('Assignments', 'assignments')}
+                  {list('Exam mentions', 'examMentions')}
+                </>
+              )}
             </View>
           </View>
 
@@ -585,6 +678,13 @@ export default function LectureNotebookScreen() {
           </RowGroup>
         </Section>
       ) : null}
+      <PhotoViewer
+        photos={originals}
+        index={viewer?.index ?? null}
+        context={viewer?.context}
+        onChange={(index) => setViewer({ index })}
+        onClose={() => setViewer(null)}
+      />
     </Screen>
   );
 }
@@ -612,6 +712,18 @@ const styles = StyleSheet.create({
   head: { gap: 4 },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 22 },
   headLabel: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  headAction: { marginLeft: 'auto' },
+  sourceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 28,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderRadius: Radius.pill,
+    flexShrink: 0,
+  },
+  sourceLabel: { fontSize: 11.5, lineHeight: 16, fontWeight: '600' },
   count: { fontSize: 12.5, lineHeight: 18, fontVariant: ['tabular-nums'] },
   caption: { fontSize: 12.5, lineHeight: 18 },
   tag: { paddingHorizontal: 7, height: 19, justifyContent: 'center', borderRadius: Radius.small },

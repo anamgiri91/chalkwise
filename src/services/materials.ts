@@ -2,6 +2,7 @@ import type { Material, MaterialUploadInput } from '@/types';
 import { getDataMode } from '@/lib/dataMode';
 import { apiRequest } from '@/lib/api';
 import { uploadApiMaterial } from './api/materials';
+import { demoMaterials, demoPhotoUrl } from './demoPhotos';
 
 const bucketName = 'lecture-materials';
 const maxPhotoBytes = 10 * 1024 * 1024;
@@ -164,7 +165,8 @@ export async function attachMaterialToLecture(
 export async function getMaterials(lectureId: string): Promise<Material[]> {
   if (getDataMode() === 'api')
     return apiRequest(`/materials?lectureId=${encodeURIComponent(lectureId)}`);
-  // Mock mode has no uploads, so a lecture there never has originals.
+  // Mock mode has no uploads; only the bundled sample boards appear as originals.
+  if (getDataMode() === 'mock') return demoMaterials(lectureId);
   if (getDataMode() !== 'supabase' || !lectureId.trim()) return [];
   const { supabase } = await import('@/lib/supabase');
   const { data, error } = await supabase
@@ -196,6 +198,7 @@ export async function getMaterialUrl(
       return null;
     }
   }
+  if (getDataMode() === 'mock') return demoPhotoUrl(material);
   if (getDataMode() !== 'supabase' || !material.filePath.trim()) return null;
   try {
     const { supabase } = await import('@/lib/supabase');
