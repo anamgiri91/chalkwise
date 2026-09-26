@@ -23,7 +23,7 @@ Write the thresholds down before inviting anyone, so the results cannot move the
 ## Before inviting students
 
 1. Complete the AWS runbook's acceptance and "operations before invitation" steps.
-2. Apply `server/migrations/001_initial.sql` then `002_review_events.sql` (after
+2. Apply `server/migrations/001_initial.sql`, `002_review_events.sql` and `003_study_features.sql` in order (after
    review and approval). The review log only records reviews made after 002 is applied.
 3. Decide which grounding check ships. `isSupported` is live today;
    `isSupportedByClause` measured better (see the

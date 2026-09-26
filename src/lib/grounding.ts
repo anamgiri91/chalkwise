@@ -384,3 +384,34 @@ export function isSupportedByClause(
   const claim = normalizeText(item);
   return segmentsOf(source).some((segment) => supportedBySegment(claim, segment, thresholds));
 }
+
+/**
+ * Which original photo a note line came from: the 1-based index of the transcript that
+ * contains all of the line's numbers and dates and the largest share of its words, or null when
+ * none contains at least half of them. Used to link a note back to its photo, so a
+ * wrong answer costs a student one extra tap, never a wrong fact.
+ */
+export function sourcePhotoOf(item: string, transcripts: string[]): number | null {
+  const claim = normalizeText(item);
+  const content = words(claim).filter((t) => t.length > 1 && !STOPWORDS.has(t) && !NEGATORS.has(t));
+  if (!content.length) return null;
+  const claimNumbers = numbersIn(claim).singles;
+  let best: number | null = null;
+  let bestScore = 0;
+  transcripts.forEach((transcript, index) => {
+    const text = normalizeText(transcript);
+    const numbers = numbersIn(text).singles;
+    if ([...claimNumbers].some((n) => !numbers.has(n))) return;
+    const tokens = words(text);
+    const prefix = SUPPORT_THRESHOLDS.datePrefixLength;
+    const dates = tokens.filter((t) => isDateToken(t, prefix)).map((t) => t.slice(0, prefix));
+    if (content.some((t) => isDateToken(t, prefix) && !dates.includes(t.slice(0, prefix)))) return;
+    const stems = new Set(tokens.map(stem));
+    const score = content.filter((t) => stems.has(stem(t))).length / content.length;
+    if (score > bestScore) {
+      best = index + 1;
+      bestScore = score;
+    }
+  });
+  return bestScore >= 0.5 ? best : null;
+}

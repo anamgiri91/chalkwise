@@ -1,6 +1,6 @@
 import { parseCaptureExtraction, type CaptureExtraction } from '../../src/lib/captureExtraction.ts';
 import { parseLectureAnalysis, parseLectureOrganization } from '../../src/lib/lectureAnalysis.ts';
-import { verifySupport } from '../../src/lib/grounding.ts';
+import { sourcePhotoOf, verifySupport } from '../../src/lib/grounding.ts';
 import type { LectureAnalysis } from '../../src/features/lectures/types.ts';
 import { ApiError } from './errors.ts';
 import type { Ai } from './ai.ts';
@@ -122,6 +122,11 @@ export async function analyzeSession(
   // and cannot be checked this way, so it is left intact and labelled as generated.
   const assignments = verifySupport(organization.assignments, transcript);
   const examMentions = verifySupport(organization.examMentions, transcript);
+  // Link each surviving note line to the photo whose transcript contains it.
+  const byPhoto = photos.map(
+    (_, index) => extractions.find((entry) => entry.photo === index + 1)?.extraction.text ?? '',
+  );
+  const sourcesOf = (lines: string[]) => lines.map((line) => sourcePhotoOf(line, byPhoto));
   const labels = extractions
     .map((entry) => entry.extraction.courseLabel)
     .filter((label): label is string => Boolean(label));
@@ -132,6 +137,12 @@ export async function analyzeSession(
       suggestedCourse: labels.length ? mostCommon(labels) : null,
       assignments: assignments.supported,
       examMentions: examMentions.supported,
+      sources: {
+        keyConcepts: sourcesOf(organization.keyConcepts),
+        importantPoints: sourcesOf(organization.importantPoints),
+        assignments: sourcesOf(assignments.supported),
+        examMentions: sourcesOf(examMentions.supported),
+      },
     }),
     unreadablePhotos,
     removedClaims: assignments.unsupported.length + examMentions.unsupported.length,
