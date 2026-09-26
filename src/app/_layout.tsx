@@ -19,6 +19,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/hooks/use-theme';
 import { getCurrentUserId, getMyProfile, onAuthChange, onProfileChange } from '@/services/auth';
 import { hasEnrolledCourses, onEnrollmentChange } from '@/services/enrollment';
+import { onReminderOpened, prepareReminders } from '@/services/reminders';
 
 const authRoutes = ['login', 'signup', 'account-help'];
 
@@ -113,6 +114,19 @@ export default function RootLayout() {
   const theme = useTheme();
   const gate = useAuthGate();
   const dark = theme.isDark;
+  const signedIn = gate.ready && !gate.error && !!gate.userId && gate.enrollment;
+
+  useEffect(() => {
+    void prepareReminders().catch(() => {});
+  }, []);
+
+  // A tapped review reminder opens its notebook once the workspace is ready.
+  useEffect(() => {
+    if (!signedIn) return;
+    return onReminderOpened((lectureId) =>
+      router.push({ pathname: '/lecture/[id]', params: { id: lectureId } }),
+    );
+  }, [signedIn]);
   const navigationTheme = dark ? DarkTheme : DefaultTheme;
 
   return (

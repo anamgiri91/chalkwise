@@ -22,6 +22,7 @@ import {
   getWorkspaceCapabilities,
 } from '@/services/study';
 import { buildReviewQueue } from '@/features/study/queue';
+import { refreshReviewReminders } from '@/services/reminders';
 import type { Course, Lecture, LectureReview, LectureSharing, ReviewConfidence } from '@/types';
 
 /**
@@ -290,6 +291,8 @@ export default function LectureNotebookScreen() {
     setActionError('');
     try {
       setReview(await recordReview(id, confidence));
+      // Rescheduling is best-effort: the review is already saved.
+      void refreshReviewReminders().catch(() => {});
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Could not save your review.');
     } finally {

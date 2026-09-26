@@ -55,7 +55,13 @@
           "barcodeScannerEnabled": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#234E3C"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
